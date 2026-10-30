@@ -191,6 +191,14 @@ textarea {
   color: var(--warn);
 }
 
+.storage-problem {
+  margin: 0;
+  padding: 10px var(--gutter);
+  background: var(--bad-soft);
+  color: var(--bad);
+  font-weight: 600;
+}
+
 .tabs {
   position: fixed;
   right: 0;

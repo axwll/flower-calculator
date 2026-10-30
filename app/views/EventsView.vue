@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InstallGuide from '../components/InstallGuide.vue'
 import { useEventStore } from '../stores/event'
 
 const store = useEventStore()
@@ -7,6 +8,7 @@ const store = useEventStore()
 <template>
   <section class="page">
     <h1>Events</h1>
+    <InstallGuide dismissible />
     <p v-if="store.events.length === 0" class="muted">No events yet.</p>
     <RouterLink
       v-for="event in store.events"
@@ -18,7 +20,6 @@ const store = useEventStore()
       <span v-if="event.date" class="muted small">{{ event.date }}</span>
     </RouterLink>
     <RouterLink class="button button-primary" to="/events/new">New event</RouterLink>
-    <p class="muted small saved-note">Events aren't saved yet, so they clear when you reload.</p>
   </section>
 </template>
 
@@ -29,9 +30,5 @@ const store = useEventStore()
   flex-direction: column;
   color: var(--ink);
   text-decoration: none;
-}
-
-.saved-note {
-  margin-top: 12px;
 }
 </style>

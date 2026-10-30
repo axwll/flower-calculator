@@ -9,6 +9,7 @@ import EventsView from './views/EventsView.vue'
 import PaletteView from './views/PaletteView.vue'
 import PlaceholderView from './views/PlaceholderView.vue'
 import ReviewView from './views/ReviewView.vue'
+import SettingsView from './views/SettingsView.vue'
 import WorkPlanView from './views/WorkPlanView.vue'
 
 /** Hash URLs, because GitHub Pages cannot serve deep links. */
@@ -23,8 +24,11 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
         path: '/events/:eventId',
         component: EventLayout,
         redirect: { name: 'designs' },
-        // Events live in memory for now, so a reload can leave an address with no event.
-        beforeEnter: (to) => useEventStore().open(String(to.params.eventId)) || '/events',
+        beforeEnter: async (to) => {
+          const store = useEventStore()
+          await store.whenReady()
+          return store.open(String(to.params.eventId)) || '/events'
+        },
         children: [
           { path: 'designs', name: 'designs', component: DesignsView, meta: { summary: true } },
           { path: 'palette', name: 'palette', component: PaletteView, meta: { summary: true } },
@@ -42,11 +46,7 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
         component: PlaceholderView,
         props: { title: 'Library', detail: 'Editing recipes, flowers and suppliers.' },
       },
-      {
-        path: '/settings',
-        component: PlaceholderView,
-        props: { title: 'Settings', detail: 'Thresholds, nickname and backups.' },
-      },
+      { path: '/settings', component: SettingsView },
       { path: '/:pathMatch(.*)*', redirect: '/events' },
     ],
   })

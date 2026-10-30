@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, toRaw } from 'vue'
+import { computed, ref, toRaw, watch } from 'vue'
 
 import { allocate, chooseSupplier, combineDesignFlowers, expandPlan, resolveOffers } from '@engine'
 import type {
@@ -16,9 +16,10 @@ import type {
   Size,
 } from '@engine'
 
+import { CURRENT_SCHEMA_VERSION, migrateEvent } from '../storage/migrations'
+import { eventRepository } from '../storage/repository'
 import { useCatalogueStore } from './catalogue'
 
-const SCHEMA_VERSION = 1
 const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
 
 const DEFAULT_SETTINGS: PlanSettings = {
@@ -43,14 +44,61 @@ export interface NewEvent {
   targetBudgetPence?: number
 }
 
+/** Vue's proxies can't go into IndexedDB, and copies must share nothing with the original. */
+function toPlain(event: EventPlan): EventPlan {
+  return JSON.parse(JSON.stringify(event)) as EventPlan
+}
+
+/** Random, because ids must stay unique across launches now that events are saved. */
+function newEventId(): string {
+  const [random = 0] = crypto.getRandomValues(new Uint32Array(1))
+  return `event-${Date.now().toString(36)}-${random.toString(36)}`
+}
+
 export const useEventStore = defineStore('event', () => {
   const catalogue = useCatalogueStore()
 
+  const repository = eventRepository()
+
   const events = ref<EventPlan[]>([])
   const currentId = ref<string | null>(null)
-  let created = 0
+  const saveFailed = ref(false)
+  const loadFailed = ref(false)
+  const unreadableEvents = ref(0)
 
   const current = computed(() => events.value.find((event) => event.id === currentId.value) ?? null)
+
+  /** A record that can't be read stays in storage, so a later version may still rescue it. */
+  async function load() {
+    try {
+      for (const record of await repository.loadAll()) {
+        try {
+          const event = migrateEvent(record)
+          if (!events.value.some((item) => item.id === event.id)) events.value.push(event)
+        } catch {
+          unreadableEvents.value += 1
+        }
+      }
+    } catch {
+      loadFailed.value = true
+    }
+  }
+
+  const loaded = load()
+
+  function whenReady(): Promise<void> {
+    return loaded
+  }
+
+  function save(event: EventPlan) {
+    repository.save(toPlain(event)).then(
+      () => (saveFailed.value = false),
+      () => (saveFailed.value = true),
+    )
+  }
+
+  // Saves straight away, so nothing is lost if a phone closes the app.
+  watch(current, (event) => event && save(event), { deep: true })
 
   /** Reruns on every change, so screens never work out totals themselves. */
   const allocation = computed<AllocationResult | null>(() => {
@@ -99,15 +147,14 @@ export const useEventStore = defineStore('event', () => {
   }
 
   function createEvent(details: NewEvent): string {
-    created += 1
-    const id = `event-${Date.now().toString(36)}-${created}`
+    const id = newEventId()
     const designs = catalogue.designs.flatMap((design) => {
       const size = catalogue.defaultSize(design.id)
       return (size && planDesign(design.id, size, design.optional)) || []
     })
 
-    events.value.push({
-      schemaVersion: SCHEMA_VERSION,
+    const event: EventPlan = {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       id,
       ...details,
       designs,
@@ -115,8 +162,36 @@ export const useEventStore = defineStore('event', () => {
       supplierChoice: {},
       settings: { ...DEFAULT_SETTINGS },
       gatherNotes: {},
-    })
+    }
+    events.value.push(event)
+    save(event)
     return id
+  }
+
+  /** Copies recipes, palette and quantities. The name, date and budget are the new event's. */
+  function duplicateEvent(sourceId: string, details: NewEvent): string | null {
+    const source = events.value.find((event) => event.id === sourceId)
+    if (!source) return null
+
+    const { date: _date, targetBudgetPence: _budget, ...kept } = toPlain(source)
+    const event: EventPlan = { ...kept, ...details, id: newEventId() }
+    events.value.push(event)
+    save(event)
+    return event.id
+  }
+
+  function countExisting(incoming: EventPlan[]): number {
+    return incoming.filter((event) => events.value.some((item) => item.id === event.id)).length
+  }
+
+  /** Adds new events and replaces same-id ones. It never removes anything. */
+  function importEvents(incoming: EventPlan[]) {
+    for (const event of incoming) {
+      const index = events.value.findIndex((item) => item.id === event.id)
+      if (index === -1) events.value.push(event)
+      else events.value[index] = event
+      save(event)
+    }
   }
 
   function open(id: string): boolean {
@@ -224,6 +299,13 @@ export const useEventStore = defineStore('event', () => {
   return {
     events,
     current,
+    saveFailed,
+    loadFailed,
+    unreadableEvents,
+    whenReady,
+    duplicateEvent,
+    countExisting,
+    importEvents,
     allocation,
     workPlan,
     lines,

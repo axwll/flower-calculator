@@ -12,6 +12,7 @@ const store = useEventStore()
 const name = ref('')
 const date = ref('')
 const budget = ref('')
+const copyFrom = ref('')
 const nameError = ref('')
 const budgetError = ref('')
 
@@ -23,11 +24,15 @@ function submit() {
   budgetError.value = targetBudgetPence === null ? 'Enter the budget in pounds, like 500.' : ''
   if (nameError.value || budgetError.value || targetBudgetPence === null) return
 
-  const id = store.createEvent({
+  const details = {
     name: trimmedName,
     ...(date.value && { date: date.value }),
     ...(targetBudgetPence !== undefined && { targetBudgetPence }),
-  })
+  }
+  const id = copyFrom.value
+    ? store.duplicateEvent(copyFrom.value, details)
+    : store.createEvent(details)
+  if (id) store.open(id)
   void router.push(`/events/${id}/designs`)
 }
 </script>
@@ -50,7 +55,18 @@ function submit() {
         <input v-model="budget" name="budget" type="text" inputmode="decimal" autocomplete="off" />
         <span v-if="budgetError" class="error" role="alert">{{ budgetError }}</span>
       </label>
-      <button class="button button-primary" type="submit">Start blank</button>
+      <label v-if="store.events.length > 0" class="field">
+        <span class="field-label">Start from</span>
+        <select v-model="copyFrom" name="copy-from">
+          <option value="">Start blank</option>
+          <option v-for="event in store.events" :key="event.id" :value="event.id">
+            {{ event.name }}
+          </option>
+        </select>
+      </label>
+      <button class="button button-primary" type="submit">
+        {{ copyFrom ? 'Duplicate event' : 'Start blank' }}
+      </button>
     </form>
   </section>
 </template>

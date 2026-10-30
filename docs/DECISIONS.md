@@ -80,3 +80,20 @@ No answers to the Phase 1 brief's seven data questions yet, so `fixtures/` uses 
 - **`engine/` gained `combineDesignFlowers`,** because a flower can be on several lines of one design and helpers should see it once.
 - **Gather notes stay on the review screen.** Section 7 doesn't list them for the work plan.
 - **Print options aren't remembered,** as nothing is saved until Phase 4.
+
+## 2026-10-30: Phase 4 decisions
+
+The owner asked for this phase to start without approving the brief first, so these haven't been reviewed yet.
+
+- **`fake-indexeddb` not added.** It isn't in section 3 and the owner couldn't be asked. Storage sits behind `EventRepository`, so tests use an in-memory version, and the Dexie layer was checked in real Chrome. That layer has no automated test.
+- **Migrations cover event contents through `schemaVersion`.** Dexie's own version covers tables and indexes only.
+- **A stored event that can't be read is skipped, counted and kept,** so a later version can still rescue it.
+- **Saves aren't debounced,** so nothing is lost if a phone closes the app.
+- **Event ids now include a random part.** The old counter restarted on each launch, so saved events could have collided.
+- **Duplicate copies supplier choices as well** as recipes, palette and quantities. The name, date and budget come from the new event screen. "Keep frozen prices" arrives with purchases in Phase 7.
+- **Import never removes events,** is all or nothing, and asks before replacing same-id events.
+- **Backup nudges wait for Phase 7,** as the plan ties them to purchases.
+- **Install guide is stored as dismissed in `localStorage`,** as a per-device convenience. If storage is blocked, it just reappears.
+- **New versions install automatically** (`autoUpdate`). Saved events are unaffected, but anything typed into a form and not yet submitted could be lost.
+- **Accepted: 4 low-severity `npm audit` findings** in `vite-plugin-pwa`'s build tooling. They are dev-only, production dependencies report 0, and the only offered fix is a very old major version.
+- **The icon is a placeholder flower,** drawn for this phase.
