@@ -1,0 +1,313 @@
+{
+  "notes": [
+    "Flowers and bunch sizes come from Appendix A of docs/PLAN.md.",
+    "Bunch sizes are unconfirmed: M&S rose 10 (paper's 20 suggests 10s, Appendix A also lists 30), orange rose 60, hydrangea 35 (paper says 35+).",
+    "Dahlias, scabious and sunflower have no bunch size on the paper, so they have no price report and are needs data.",
+    "All prices and suppliers are invented round numbers for testing. None are real."
+  ],
+  "suppliers": [
+    { "id": "supermarket-c", "name": "Supermarket C", "type": "supermarket", "active": true },
+    { "id": "wholesaler-a", "name": "Wholesaler A", "type": "wholesaler", "active": true },
+    { "id": "wholesaler-b", "name": "Wholesaler B", "type": "wholesaler", "active": true }
+  ],
+  "designs": [
+    { "id": "bridal-bouquet", "name": "Bridal bouquet", "group": "Bridal", "optional": false },
+    {
+      "id": "bridesmaid-bouquet",
+      "name": "Bridesmaid's bouquets",
+      "group": "Bridal",
+      "optional": false
+    },
+    { "id": "groom", "name": "Groom", "group": "Bridal", "optional": false },
+    { "id": "buttonhole", "name": "Buttonholes", "group": "Bridal", "optional": false },
+    { "id": "corsage", "name": "Ladies' corsages", "group": "Bridal", "optional": false },
+    { "id": "top-table", "name": "Top table", "group": "Reception", "optional": false },
+    { "id": "pedestal", "name": "Pedestals", "group": "Reception", "optional": false },
+    { "id": "half-moon-hoop", "name": "Half-moon hoop", "group": "Reception", "optional": false },
+    { "id": "pumpkin", "name": "Pumpkins", "group": "Reception", "optional": true },
+    {
+      "id": "pumpkin-posey",
+      "name": "Pumpkin white posey",
+      "group": "Reception",
+      "optional": true
+    },
+    {
+      "id": "table-vases",
+      "name": "Table vases",
+      "group": "Reception",
+      "optional": true,
+      "isLeftoverPool": true
+    }
+  ],
+  "flowers": [
+    {
+      "id": "alstroemeria",
+      "name": "Alstroemeria",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "burgundy-carnation",
+      "name": "Burgundy carnation",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "chrysanthemum-blooms",
+      "name": "Chrysanthemum blooms (orange)",
+      "colour": "orange",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "dahlia-dark",
+      "name": "Dahlia (dark)",
+      "colour": "dark",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "dahlia-orange",
+      "name": "Dahlia (orange)",
+      "colour": "orange",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "dahlia-peachy",
+      "name": "Dahlia (peachy)",
+      "colour": "peachy",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "focus-rose",
+      "name": "Focus rose (white)",
+      "colour": "white",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "hydrangea",
+      "name": "Hydrangea heads",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "lisianthus",
+      "name": "Lisianthus",
+      "roles": ["secondary"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "ms-rose",
+      "name": "Secondary rose (M&S orange)",
+      "colour": "orange",
+      "roles": ["secondary"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "orange-rose",
+      "name": "Secondary rose (orange)",
+      "colour": "orange",
+      "roles": ["secondary"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "santini",
+      "name": "Chrysanthemum santini (orange)",
+      "colour": "orange",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "scabious",
+      "name": "Scabious / paw paw",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "spray-carnation",
+      "name": "Spray carnation (white)",
+      "colour": "white",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "sunflower",
+      "name": "Sunflower",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "wax-flower",
+      "name": "Wax flower",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    }
+  ],
+  "prices": [
+    {
+      "id": "p01",
+      "flowerId": "focus-rose",
+      "supplierId": "wholesaler-a",
+      "pricePence": 4000,
+      "stemsPerBunch": 48,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p02",
+      "flowerId": "focus-rose",
+      "supplierId": "wholesaler-b",
+      "pricePence": 4400,
+      "stemsPerBunch": 48,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p03",
+      "flowerId": "ms-rose",
+      "supplierId": "supermarket-c",
+      "pricePence": 800,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p04",
+      "flowerId": "orange-rose",
+      "supplierId": "wholesaler-a",
+      "pricePence": 3600,
+      "stemsPerBunch": 60,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p05",
+      "flowerId": "spray-carnation",
+      "supplierId": "wholesaler-a",
+      "pricePence": 600,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p06",
+      "flowerId": "santini",
+      "supplierId": "wholesaler-a",
+      "pricePence": 2400,
+      "stemsPerBunch": 30,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p07",
+      "flowerId": "wax-flower",
+      "supplierId": "wholesaler-a",
+      "pricePence": 3000,
+      "stemsPerBunch": 48,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p08",
+      "flowerId": "burgundy-carnation",
+      "supplierId": "wholesaler-a",
+      "pricePence": 700,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p09",
+      "flowerId": "chrysanthemum-blooms",
+      "supplierId": "wholesaler-a",
+      "pricePence": 1800,
+      "stemsPerBunch": 20,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p10",
+      "flowerId": "lisianthus",
+      "supplierId": "wholesaler-b",
+      "pricePence": 2200,
+      "stemsPerBunch": 20,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p11",
+      "flowerId": "hydrangea",
+      "supplierId": "wholesaler-b",
+      "pricePence": 7000,
+      "stemsPerBunch": 35,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p12",
+      "flowerId": "alstroemeria",
+      "supplierId": "wholesaler-a",
+      "pricePence": 1200,
+      "stemsPerBunch": 20,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "p13",
+      "flowerId": "alstroemeria",
+      "supplierId": "wholesaler-b",
+      "pricePence": 1300,
+      "stemsPerBunch": 20,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         include: ['engine/**/*.ts'],
-        exclude: ['engine/**/*.test.ts'],
+        exclude: ['engine/**/*.test.ts', 'engine/testkit/**', 'engine/types.ts'],
         thresholds: { lines: 90, branches: 90 },
       },
     },

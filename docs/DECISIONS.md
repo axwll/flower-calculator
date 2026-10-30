@@ -25,3 +25,32 @@ The scaffold came with both. Both run with zero warnings allowed, and neither us
 ## 2026-10-30: Prettier skips `docs/`
 
 Keeps the plan and other docs exactly as written. `format:check` covers everything else.
+
+## 2026-10-30: Phase 1 engine rules the plan left open
+
+- **Thin-bunch threshold is a whole-number percent** (`15`, not `0.15`). In floating point, `floor(0.29 × 100)` gives 28.
+- **A flower that only receives floating stems is priced as needing 1 stem** when choosing a supplier. Its pre-floating cost is 0 everywhere, so supplier id alone would otherwise pick.
+- **Needs-data flowers rank last for floating stems**, and the search scores needs-data stems first, then spare stems, then cost. Without that, a flower with no known cost looks free.
+- **An override pointing at a supplier with no usable price is needs data**, with a warning. It does not quietly switch supplier.
+- **Cost per design uses largest-remainder rounding**, so design costs sum exactly to the total.
+- **Unassigned stems are reported on each design line.** Invariant 5 now reads: each placement sums to its recipe stems, less any unassigned stems.
+- **`trackLeftovers: false` flowers still count towards total spare stems.** They only skip thin-bunch warnings.
+- **Bad plan values throw `RangeError`. Bad price data does not throw:** a bad newest report makes that supplier unusable, and does not revive an older price.
+- **`allocate` takes `{ plan, flowers, designs, prices, now }`**, because it needs flower and design data, and settings are already in the plan.
+- **`allocate` has no supplier list**, so the caller must leave inactive suppliers' reports out of `prices`. Phase 2 does this when it loads data.
+- **`purchase` and `PurchaseSnapshot` wait for Phase 7**, when their contents are designed.
+- **`tsconfig.vitest.json` uses `ES2022` and DOM libraries.** The template's empty `lib` broke engine code imported by tests.
+
+## 2026-10-30: Floating stems use a capped search, with a known gap
+
+The Step 4 priority rules alone were beaten by brute force. On two lines, the rules give the first line to a free foraged flower, and the second line then opens a bunch with no stems to share it.
+
+`placeFloating` now starts from the priority rules, then searches every combination and keeps a result only if it is strictly better on needs-data stems, spare stems, then cost. The search is limited by combinations, not the plan's suggested 12 floating stems, because combinations are what cost time.
+
+The cap is 5,000 combinations. At 8,000 combinations, a plan with 6 flowers took 5.6ms on a laptop, and the cost grows with flowers and on slower phones.
+
+**Known gap:** above the cap, the priority rules are used alone, so the result can be slightly worse than the best possible. Invariant 6 is tested up to 3 lines of 5 flowers, which is within the cap.
+
+## 2026-10-30: Fixture values awaiting confirmation
+
+No answers to the Phase 1 brief's seven data questions yet, so `fixtures/` uses the brief's fallbacks, noted in each file. Golden tests prove the engine's arithmetic on those values. They do not confirm the values themselves.

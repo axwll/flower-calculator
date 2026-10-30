@@ -1,0 +1,15 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "include": ["engine/**/*"],
+  "exclude": ["engine/**/*.test.ts", "engine/testkit/**"],
+  "compilerOptions": {
+    // No DOM library: the engine must stay free of browser APIs.
+    "lib": ["ES2022"],
+    "types": [],
+    "noUncheckedIndexedAccess": true,
+
+    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
+    // Specified here to keep it out of the root directory.
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.engine.tsbuildinfo"
+  }
+}

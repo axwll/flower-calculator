@@ -1,0 +1,184 @@
+{
+  "notes": [
+    "Made-up event. Recipes come from the Reception section of Appendix A.",
+    "Invented, awaiting confirmation: the whole palette, since the paper gives none.",
+    "Invented, awaiting confirmation: pumpkins and the white posey use the filler role, as their flowers are not listed.",
+    "Inferred: the posey is 20 stems per placement, and the hoop's 3 blooms are chrysanthemum blooms.",
+    "The hoop recipe sums to 43. The paper says 45, and recipe arithmetic wins."
+  ],
+  "plan": {
+    "schemaVersion": 1,
+    "id": "fixture-reception",
+    "name": "Sample wedding: reception",
+    "date": "2026-07-04",
+    "designs": [
+      {
+        "designId": "top-table",
+        "size": "Fixed",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "top-table",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "hydrangea",
+              "stemsPerUnit": 5
+            },
+            {
+              "kind": "role",
+              "role": "focal",
+              "stemsPerUnit": 7
+            },
+            {
+              "kind": "role",
+              "role": "secondary",
+              "stemsPerUnit": 13
+            },
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 10
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "pedestal",
+        "size": "Fixed",
+        "quantity": 2,
+        "enabled": true,
+        "recipe": {
+          "designId": "pedestal",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "hydrangea",
+              "stemsPerUnit": 5
+            },
+            {
+              "kind": "role",
+              "role": "focal",
+              "stemsPerUnit": 5
+            },
+            {
+              "kind": "role",
+              "role": "secondary",
+              "stemsPerUnit": 10
+            },
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 13
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "half-moon-hoop",
+        "size": "Fixed",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "half-moon-hoop",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "sunflower",
+              "stemsPerUnit": 10
+            },
+            {
+              "kind": "named",
+              "flowerId": "hydrangea",
+              "stemsPerUnit": 10
+            },
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 20
+            },
+            {
+              "kind": "named",
+              "flowerId": "chrysanthemum-blooms",
+              "stemsPerUnit": 3
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "pumpkin",
+        "size": "Fixed",
+        "quantity": 3,
+        "enabled": true,
+        "recipe": {
+          "designId": "pumpkin",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 20
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "pumpkin-posey",
+        "size": "Fixed",
+        "quantity": 2,
+        "enabled": true,
+        "recipe": {
+          "designId": "pumpkin-posey",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 20
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "table-vases",
+        "size": "Fixed",
+        "quantity": 11,
+        "enabled": true,
+        "recipe": {
+          "designId": "table-vases",
+          "size": "Fixed",
+          "lines": [],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      }
+    ],
+    "palette": {
+      "focal": ["chrysanthemum-blooms", "focus-rose"],
+      "secondary": ["lisianthus", "orange-rose"],
+      "filler": ["alstroemeria", "burgundy-carnation", "santini"],
+      "foliage": [],
+      "accent": []
+    },
+    "supplierChoice": {},
+    "settings": {
+      "thinBunchPercent": 15,
+      "priceAmberDays": 14,
+      "priceRedDays": 30,
+      "bigChangePercent": 50
+    }
+  }
+}

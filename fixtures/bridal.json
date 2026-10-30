@@ -1,0 +1,237 @@
+{
+  "notes": [
+    "Made-up event. Stems per placement come from the Bridal section of Appendix A.",
+    "Named flowers throughout, per the plan default.",
+    "Inferred, awaiting confirmation: scabious 1 each for groom, buttonholes and corsages (reaches the paper total of 47).",
+    "Inferred, awaiting confirmation: wax flower 1 each for groom and buttonholes.",
+    "Corsages use the grid cells (1 rose, 1 orange dahlia), which matches the recipe total of 20 orange dahlias.",
+    "Spray carnation is 8 stems by recipe arithmetic. Appendix A target says 10, possibly the bunch size."
+  ],
+  "plan": {
+    "schemaVersion": 1,
+    "id": "fixture-bridal",
+    "name": "Sample wedding: bridal",
+    "date": "2026-07-04",
+    "designs": [
+      {
+        "designId": "bridal-bouquet",
+        "size": "Fixed",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "bridal-bouquet",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "focus-rose",
+              "stemsPerUnit": 5
+            },
+            {
+              "kind": "named",
+              "flowerId": "ms-rose",
+              "stemsPerUnit": 3
+            },
+            {
+              "kind": "named",
+              "flowerId": "spray-carnation",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-dark",
+              "stemsPerUnit": 4
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-orange",
+              "stemsPerUnit": 3
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-peachy",
+              "stemsPerUnit": 3
+            },
+            {
+              "kind": "named",
+              "flowerId": "wax-flower",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "scabious",
+              "stemsPerUnit": 5
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "bridesmaid-bouquet",
+        "size": "Fixed",
+        "quantity": 7,
+        "enabled": true,
+        "recipe": {
+          "designId": "bridesmaid-bouquet",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "focus-rose",
+              "stemsPerUnit": 4
+            },
+            {
+              "kind": "named",
+              "flowerId": "ms-rose",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "spray-carnation",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-dark",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-orange",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-peachy",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "wax-flower",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "scabious",
+              "stemsPerUnit": 5
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "groom",
+        "size": "Fixed",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "groom",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "dahlia-orange",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "santini",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "wax-flower",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "scabious",
+              "stemsPerUnit": 1
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "buttonhole",
+        "size": "Fixed",
+        "quantity": 4,
+        "enabled": true,
+        "recipe": {
+          "designId": "buttonhole",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "focus-rose",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "santini",
+              "stemsPerUnit": 2
+            },
+            {
+              "kind": "named",
+              "flowerId": "wax-flower",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "scabious",
+              "stemsPerUnit": 1
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "corsage",
+        "size": "Fixed",
+        "quantity": 2,
+        "enabled": true,
+        "recipe": {
+          "designId": "corsage",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "focus-rose",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "dahlia-orange",
+              "stemsPerUnit": 1
+            },
+            {
+              "kind": "named",
+              "flowerId": "scabious",
+              "stemsPerUnit": 1
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      }
+    ],
+    "palette": {
+      "focal": [],
+      "secondary": [],
+      "filler": [],
+      "foliage": [],
+      "accent": []
+    },
+    "supplierChoice": {},
+    "settings": {
+      "thinBunchPercent": 15,
+      "priceAmberDays": 14,
+      "priceRedDays": 30,
+      "bigChangePercent": 50
+    }
+  }
+}

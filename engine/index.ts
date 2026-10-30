@@ -1,0 +1,6 @@
+export { allocate } from './allocate'
+export type { AllocationInput } from './allocate'
+export { formatPence, parsePounds } from './money'
+export type { Freshness, Offer } from './prices'
+export type * from './results'
+export type * from './types'

@@ -1,0 +1,368 @@
+{
+  "notes": [
+    "Invented data that deliberately exercises each case in the Appendix A fixture rules.",
+    "lily: an offer that has expired. tulip: only a stale price. peony: a cheaper stale price beside a fresh one.",
+    "rose: multi-role. dahlia: stem-sold. fern: foraged. statice: thin bunch. thistle: needs data.",
+    "accent has no ticked flowers. Focal lines divide evenly. Secondary and filler have remainders.",
+    "Small, Medium and Large pedestal recipes are placeholders until the real example arrives."
+  ],
+  "suppliers": [
+    {
+      "id": "s1",
+      "name": "Supplier 1",
+      "type": "wholesaler",
+      "active": true
+    },
+    {
+      "id": "s2",
+      "name": "Supplier 2",
+      "type": "other",
+      "active": true
+    }
+  ],
+  "designs": [
+    {
+      "id": "pedestal",
+      "name": "Pedestal",
+      "group": "Reception",
+      "optional": false
+    },
+    {
+      "id": "arch",
+      "name": "Arch",
+      "group": "Reception",
+      "optional": false
+    },
+    {
+      "id": "statice-spray",
+      "name": "Statice spray",
+      "group": "Reception",
+      "optional": false
+    },
+    {
+      "id": "vases",
+      "name": "Table vases",
+      "group": "Reception",
+      "optional": true,
+      "isLeftoverPool": true
+    }
+  ],
+  "flowers": [
+    {
+      "id": "dahlia",
+      "name": "dahlia",
+      "roles": ["filler"],
+      "soldAs": "stem",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "fern",
+      "name": "fern",
+      "roles": ["foliage"],
+      "soldAs": "foraged",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "lily",
+      "name": "lily",
+      "roles": ["focal"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "peony",
+      "name": "peony",
+      "roles": ["secondary"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "rose",
+      "name": "rose",
+      "roles": ["focal", "secondary", "filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "statice",
+      "name": "statice",
+      "roles": ["filler"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "thistle",
+      "name": "thistle",
+      "roles": ["accent"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    },
+    {
+      "id": "tulip",
+      "name": "tulip",
+      "roles": ["secondary"],
+      "soldAs": "bunch",
+      "trackLeftovers": true,
+      "active": true
+    }
+  ],
+  "prices": [
+    {
+      "id": "e1",
+      "flowerId": "lily",
+      "supplierId": "s1",
+      "pricePence": 2000,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e2",
+      "flowerId": "lily",
+      "supplierId": "s1",
+      "pricePence": 500,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-25T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active",
+      "offerEndsAt": "2026-06-28T00:00:00.000Z",
+      "note": "offer on"
+    },
+    {
+      "id": "e3",
+      "flowerId": "rose",
+      "supplierId": "s1",
+      "pricePence": 1000,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e4",
+      "flowerId": "tulip",
+      "supplierId": "s1",
+      "pricePence": 600,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-05-21T12:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e5",
+      "flowerId": "peony",
+      "supplierId": "s1",
+      "pricePence": 900,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e6",
+      "flowerId": "peony",
+      "supplierId": "s2",
+      "pricePence": 100,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-05-01T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e7",
+      "flowerId": "dahlia",
+      "supplierId": "s1",
+      "pricePence": 150,
+      "stemsPerBunch": 1,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    },
+    {
+      "id": "e8",
+      "flowerId": "statice",
+      "supplierId": "s1",
+      "pricePence": 500,
+      "stemsPerBunch": 10,
+      "reportedAt": "2026-06-20T09:00:00.000Z",
+      "reportedBy": "fixture",
+      "status": "active"
+    }
+  ],
+  "plan": {
+    "schemaVersion": 1,
+    "id": "fixture-edge",
+    "name": "Sample edge cases",
+    "date": "2026-07-04",
+    "designs": [
+      {
+        "designId": "pedestal",
+        "size": "Small",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "pedestal",
+          "size": "Small",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "focal",
+              "stemsPerUnit": 4
+            },
+            {
+              "kind": "role",
+              "role": "foliage",
+              "stemsPerUnit": 3
+            }
+          ],
+          "version": 1,
+          "placeholder": true
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "pedestal",
+        "size": "Medium",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "pedestal",
+          "size": "Medium",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "focal",
+              "stemsPerUnit": 6
+            },
+            {
+              "kind": "role",
+              "role": "secondary",
+              "stemsPerUnit": 7
+            },
+            {
+              "kind": "role",
+              "role": "foliage",
+              "stemsPerUnit": 4
+            }
+          ],
+          "version": 1,
+          "placeholder": true
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "pedestal",
+        "size": "Large",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "pedestal",
+          "size": "Large",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "focal",
+              "stemsPerUnit": 8
+            },
+            {
+              "kind": "role",
+              "role": "secondary",
+              "stemsPerUnit": 9
+            },
+            {
+              "kind": "role",
+              "role": "filler",
+              "stemsPerUnit": 5
+            },
+            {
+              "kind": "role",
+              "role": "foliage",
+              "stemsPerUnit": 6
+            },
+            {
+              "kind": "named",
+              "flowerId": "thistle",
+              "stemsPerUnit": 2
+            }
+          ],
+          "version": 1,
+          "placeholder": true
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "arch",
+        "size": "Fixed",
+        "quantity": 2,
+        "enabled": true,
+        "recipe": {
+          "designId": "arch",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "role",
+              "role": "accent",
+              "stemsPerUnit": 3
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "statice-spray",
+        "size": "Fixed",
+        "quantity": 1,
+        "enabled": true,
+        "recipe": {
+          "designId": "statice-spray",
+          "size": "Fixed",
+          "lines": [
+            {
+              "kind": "named",
+              "flowerId": "statice",
+              "stemsPerUnit": 11
+            }
+          ],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      },
+      {
+        "designId": "vases",
+        "size": "Fixed",
+        "quantity": 4,
+        "enabled": true,
+        "recipe": {
+          "designId": "vases",
+          "size": "Fixed",
+          "lines": [],
+          "version": 1
+        },
+        "excludedFlowerIds": []
+      }
+    ],
+    "palette": {
+      "focal": ["lily", "rose"],
+      "secondary": ["peony", "rose", "tulip"],
+      "filler": ["dahlia", "rose"],
+      "foliage": ["fern"],
+      "accent": []
+    },
+    "supplierChoice": {},
+    "settings": {
+      "thinBunchPercent": 15,
+      "priceAmberDays": 14,
+      "priceRedDays": 30,
+      "bigChangePercent": 50
+    }
+  }
+}
