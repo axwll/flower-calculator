@@ -1,4 +1,4 @@
-import type { ExpandedLine, NeedsDataReason, Role, Warning } from '@engine'
+import type { ExpandedLine, LineFlower, NeedsDataReason, Role, Warning } from '@engine'
 
 const ROLE_LABELS: Record<Role, string> = {
   focal: 'Focal',
@@ -56,4 +56,19 @@ export function warningText(warning: Warning, names: Names): string {
     case 'supplier-changed':
       return `${names.flowerName(warning.flowerId)}: moved to ${names.supplierName(warning.toSupplierId)}, which is cheaper once every stem is counted.`
   }
+}
+
+export function placementText({
+  perPlacement,
+  ranges,
+}: Pick<LineFlower, 'perPlacement' | 'ranges'>): string {
+  if (perPlacement.length === 1) return String(perPlacement[0])
+  if (ranges.length === 1) return `${ranges[0]?.stems} each`
+
+  return ranges
+    .filter((range) => range.stems > 0)
+    .map(({ from, to, stems }) =>
+      from === to ? `${stems} for ${from}` : `${stems} each for ${from} to ${to}`,
+    )
+    .join(', ')
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { allocate } from './allocate'
-import { dealLine, groupRanges } from './placements'
+import { combineDesignFlowers, dealLine, groupRanges } from './placements'
 import { NOW, design, flower, named, plan, report, role } from './testkit/builders'
 
 function deal(stems: Record<string, number>, quantity: number) {
@@ -133,5 +133,67 @@ describe('allocate: design lines', () => {
     const [table] = run([design('table', 2, [role('focal', 3)])])
 
     expect(table?.lines[0]).toMatchObject({ unassignedStems: 6, flowers: [] })
+  })
+})
+
+describe('combineDesignFlowers', () => {
+  function line(stems: Record<string, number>, quantity: number, unassignedStems = 0) {
+    return {
+      role: null,
+      stemsPerUnit: 0,
+      unassignedStems,
+      flowers: deal(stems, quantity),
+    }
+  }
+
+  it('sums a flower that appears on two lines, placement by placement', () => {
+    const combined = combineDesignFlowers({
+      quantity: 3,
+      lines: [line({ rose: 4 }, 3), line({ rose: 2 }, 3)],
+    })
+
+    expect(combined).toEqual([
+      {
+        flowerId: 'rose',
+        stems: 6,
+        perPlacement: [3, 2, 1],
+        ranges: [
+          { from: 1, to: 1, stems: 3 },
+          { from: 2, to: 2, stems: 2 },
+          { from: 3, to: 3, stems: 1 },
+        ],
+      },
+    ])
+  })
+
+  it('regroups ranges after summing', () => {
+    const [rose] = combineDesignFlowers({
+      quantity: 4,
+      lines: [line({ rose: 4 }, 4), line({ rose: 4 }, 4)],
+    })
+
+    expect(rose?.ranges).toEqual([{ from: 1, to: 4, stems: 2 }])
+  })
+
+  it('orders flowers by id', () => {
+    const combined = combineDesignFlowers({
+      quantity: 1,
+      lines: [line({ zinnia: 1 }, 1), line({ aster: 1 }, 1)],
+    })
+
+    expect(combined.map((item) => item.flowerId)).toEqual(['aster', 'zinnia'])
+  })
+
+  it('leaves unassigned stems out', () => {
+    const combined = combineDesignFlowers({
+      quantity: 2,
+      lines: [line({ rose: 2 }, 2), line({}, 2, 6)],
+    })
+
+    expect(combined.map((item) => item.stems)).toEqual([2])
+  })
+
+  it('gives nothing for a design with no lines', () => {
+    expect(combineDesignFlowers({ quantity: 2, lines: [] })).toEqual([])
   })
 })

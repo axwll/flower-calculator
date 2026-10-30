@@ -1,0 +1,82 @@
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  @page matrix {
+    size: A4 landscape;
+  }
+
+  html {
+    font-size: 18px;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .tabs,
+  .event-header,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .print-title {
+    display: block !important;
+    margin: 0 0 12px;
+    font-size: 1.6rem;
+  }
+
+  .card {
+    border-color: #777777;
+    break-inside: avoid;
+  }
+
+  .muted {
+    color: #000000;
+  }
+
+  .grid-scroll,
+  .matrix-scroll {
+    overflow: visible !important;
+  }
+
+  .matrix-section {
+    break-before: page;
+    page: matrix;
+  }
+
+  /* Browsers without named pages stay in portrait, so the table also has to fit that width. */
+  .matrix {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 0.6rem !important;
+  }
+
+  .matrix th,
+  .matrix td {
+    min-width: 0 !important;
+    padding: 2px 3px !important;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .matrix thead th:first-child {
+    width: 20%;
+  }
+
+  .one-per-page .work-card + .work-card {
+    break-before: page;
+  }
+}

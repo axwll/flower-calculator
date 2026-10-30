@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { allocate } from './allocate'
 import type { AllocationInput } from './allocate'
 import { expandPlan } from './expand'
+import { combineDesignFlowers } from './placements'
 import { allocationInput } from './testkit/arbitraries'
 
 // Invariant 6, floating placement against brute force, is in floating.test.ts.
@@ -113,6 +114,25 @@ describe('engine invariants', () => {
 
       for (const flower of result.flowers) {
         expect(dealtByFlower.get(flower.flowerId) ?? 0).toBe(flower.stems)
+      }
+    })
+  })
+
+  it('5b. keeps combined design counts equal to the lines they came from', () => {
+    property((input) => {
+      for (const design of allocate(input).designs) {
+        const combined = combineDesignFlowers(design)
+        for (let placement = 0; placement < design.quantity; placement++) {
+          const fromLines = design.lines.reduce(
+            (sum, line) => sum + (line.unassignedStems > 0 ? 0 : line.stemsPerUnit),
+            0,
+          )
+          const fromCombined = combined.reduce(
+            (sum, item) => sum + (item.perPlacement[placement] ?? 0),
+            0,
+          )
+          expect(fromCombined).toBe(fromLines)
+        }
       }
     })
   })

@@ -9,6 +9,7 @@ import EventsView from './views/EventsView.vue'
 import PaletteView from './views/PaletteView.vue'
 import PlaceholderView from './views/PlaceholderView.vue'
 import ReviewView from './views/ReviewView.vue'
+import WorkPlanView from './views/WorkPlanView.vue'
 
 /** Hash URLs, because GitHub Pages cannot serve deep links. */
 export function createAppRouter(history: RouterHistory = createWebHashHistory()) {
@@ -28,6 +29,7 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
           { path: 'designs', name: 'designs', component: DesignsView, meta: { summary: true } },
           { path: 'palette', name: 'palette', component: PaletteView, meta: { summary: true } },
           { path: 'review', name: 'review', component: ReviewView },
+          { path: 'work-plan', name: 'work-plan', component: WorkPlanView },
         ],
       },
       {

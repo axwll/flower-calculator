@@ -14,6 +14,7 @@ const steps = computed(() => {
     { label: 'Designs', to: `${base}/designs` },
     { label: 'Palette', to: `${base}/palette` },
     { label: 'Review', to: `${base}/review` },
+    { label: 'Work plan', to: `${base}/work-plan` },
   ]
 })
 </script>
@@ -38,7 +39,7 @@ const steps = computed(() => {
 
 .steps {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);

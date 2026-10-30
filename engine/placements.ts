@@ -1,4 +1,4 @@
-import type { LineFlower, PlacementRange } from './results'
+import type { DesignAllocation, LineFlower, PlacementRange } from './results'
 
 /** Numbered from 1, for wording such as "bouquets 1 to 3 get 2 scabious". */
 export function groupRanges(perPlacement: number[]): PlacementRange[] {
@@ -35,4 +35,29 @@ export function dealLine(stems: ReadonlyMap<string, number>, quantity: number): 
     })
   }
   return dealt
+}
+
+/** A flower can be on several lines of a design, so helpers see it once, with its stems summed. */
+export function combineDesignFlowers({
+  quantity,
+  lines,
+}: Pick<DesignAllocation, 'quantity' | 'lines'>): LineFlower[] {
+  const combined = new Map<string, number[]>()
+
+  for (const flower of lines.flatMap((line) => line.flowers)) {
+    const counts = combined.get(flower.flowerId) ?? Array.from({ length: quantity }, () => 0)
+    combined.set(
+      flower.flowerId,
+      counts.map((count, index) => count + (flower.perPlacement[index] ?? 0)),
+    )
+  }
+
+  return [...combined]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([flowerId, perPlacement]) => ({
+      flowerId,
+      stems: perPlacement.reduce((sum, count) => sum + count, 0),
+      perPlacement,
+      ranges: groupRanges(perPlacement),
+    }))
 }

@@ -70,3 +70,13 @@ No answers to the Phase 1 brief's seven data questions yet, so `fixtures/` uses 
 - **"Start blank" only.** "Duplicate event" comes in Phase 4, when events are saved.
 - **Prices, Library and Settings are placeholders.** Plan settings use the section 5 defaults until Settings is built.
 - **Default size is Medium** where it exists, otherwise the first size.
+
+## 2026-10-30: Phase 3 decisions
+
+- **Cards read by flower**, as the plan says, approved by the owner. Design names are plural and have no singular form, so wording uses placement numbers: "2 each for 1 to 3, 1 each for 4 to 7".
+- **The compact grid only shows when placements differ.** The approved brief said it would show for several placements. When every placement matches, "4 each" already says it all, and the grid only lengthened the printout. It is also limited to 12 placements, so it fits a page.
+- **The printout says "Work plan" only,** approved by the owner. Event name, date and budget stay off, because event names often contain client names.
+- **The flower matrix prints on its own landscape page.** It overflowed portrait A4 with 10 designs. Browsers without named pages stay in portrait, so it also shrinks and wraps to fit.
+- **`engine/` gained `combineDesignFlowers`,** because a flower can be on several lines of one design and helpers should see it once.
+- **Gather notes stay on the review screen.** Section 7 doesn't list them for the work plan.
+- **Print options aren't remembered,** as nothing is saved until Phase 4.

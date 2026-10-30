@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref, toRaw } from 'vue'
 
-import { allocate, chooseSupplier, expandPlan, resolveOffers } from '@engine'
+import { allocate, chooseSupplier, combineDesignFlowers, expandPlan, resolveOffers } from '@engine'
 import type {
   AllocationResult,
   EventPlan,
   ExpandedLine,
   Flower,
+  LineFlower,
   Offer,
   OfferResolution,
   PlanDesign,
@@ -25,6 +26,15 @@ const DEFAULT_SETTINGS: PlanSettings = {
   priceAmberDays: 14,
   priceRedDays: 30,
   bigChangePercent: 50,
+}
+
+export interface WorkPlanCard {
+  designIndex: number
+  designId: string
+  size: Size
+  quantity: number
+  flowers: LineFlower[]
+  unassignedStems: number
 }
 
 export interface NewEvent {
@@ -53,6 +63,17 @@ export const useEventStore = defineStore('event', () => {
       now: new Date().toISOString(),
     })
   })
+
+  /** One entry per design with placements, with each flower shown once. */
+  const workPlan = computed<WorkPlanCard[]>(() =>
+    (allocation.value?.designs ?? []).flatMap((design) => {
+      const unassignedStems = design.lines.reduce((sum, line) => sum + line.unassignedStems, 0)
+      const flowers = combineDesignFlowers(design)
+      if (design.quantity === 0 || (flowers.length === 0 && unassignedStems === 0)) return []
+      const { designIndex, designId, size, quantity } = design
+      return [{ designIndex, designId, size, quantity, flowers, unassignedStems }]
+    }),
+  )
 
   const lines = computed<ExpandedLine[]>(() =>
     current.value ? expandPlan(current.value).lines : [],
@@ -204,6 +225,7 @@ export const useEventStore = defineStore('event', () => {
     events,
     current,
     allocation,
+    workPlan,
     lines,
     usedRoles,
     createEvent,
