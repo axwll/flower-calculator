@@ -22,7 +22,6 @@ describe('App shell', () => {
   })
 
   it.each([
-    ['Prices', '/prices'],
     ['Library', '/library'],
     ['Settings', '/settings'],
   ])('opens %s, which says it is coming later', async (label, path) => {

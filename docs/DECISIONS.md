@@ -97,3 +97,21 @@ The owner asked for this phase to start without approving the brief first, so th
 - **New versions install automatically** (`autoUpdate`). Saved events are unaffected, but anything typed into a form and not yet submitted could be lost.
 - **Accepted: 4 low-severity `npm audit` findings** in `vite-plugin-pwa`'s build tooling. They are dev-only, production dependencies report 0, and the only offered fix is a very old major version.
 - **The icon is a placeholder flower,** drawn for this phase.
+
+## 2026-10-30: Phase 5 decisions
+
+- **Phase 5 finishes on the owner's test Sheet,** approved by the owner. Moving to their mum's account waits until her data is confirmed, and means changing `app/config.ts` and redeploying.
+- **Deployed as "execute as me, access: anyone" on the test Sheet,** approved by the owner. The API address and shared key are public in `app/config.ts`, as the plan accepts. Anyone can read prices and nicknames, and add reports.
+- **`api/` is TypeScript,** built to one file by `vite.api.config.ts`, with no new dependency. `api/src/seedData.ts` is the one file allowed to import from `app/`.
+- **`MasterData` lives in `engine/types.ts`,** so the app and backend share one definition.
+- **All Sheet cells are plain text,** so Sheets can't rewrite report times or numbers.
+- **Voids are extra rows.** The latest row for an id wins, so `Prices` is append-only, and a void is also logged to `Changelog`.
+- **An `onEdit` trigger bumps the version,** so a row fixed by hand reaches the app. `Meta` edits are ignored.
+- **Master data is cached by version,** and silently skipped if it's over CacheService's size limit.
+- **Report ids are made on the phone,** so a retry after a lost reply can't create a duplicate.
+- **The offline queue sends in order and stops at the first failure,** so a later price can't overtake an earlier one. Voiding a report that was never sent just cancels it.
+- **A refused update is removed and shown to the person,** so it can't retry forever.
+- **Price age colours use the engine's freshness,** and the section 5 defaults until thresholds can be edited.
+- **The admin key on a phone is kept in `localStorage`,** and in the offline queue until sent. It's only ever sent to the backend.
+- **Features were reordered:** the queue and voiding logic were built together ahead of their screens, because reports only reach the server through the queue.
+- **Known limit:** the `Prices` tab keeps every row, and all of them are sent to phones, so replies will grow slowly over the years.

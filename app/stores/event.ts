@@ -11,23 +11,16 @@ import type {
   Offer,
   OfferResolution,
   PlanDesign,
-  PlanSettings,
   Role,
   Size,
 } from '@engine'
 
+import { DEFAULT_SETTINGS } from '../pricing'
 import { CURRENT_SCHEMA_VERSION, migrateEvent } from '../storage/migrations'
 import { eventRepository } from '../storage/repository'
 import { useCatalogueStore } from './catalogue'
 
 const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
-
-const DEFAULT_SETTINGS: PlanSettings = {
-  thinBunchPercent: 15,
-  priceAmberDays: 14,
-  priceRedDays: 30,
-  bigChangePercent: 50,
-}
 
 export interface WorkPlanCard {
   designIndex: number

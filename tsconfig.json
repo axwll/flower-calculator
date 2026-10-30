@@ -11,6 +11,9 @@
       "path": "./tsconfig.engine.json"
     },
     {
+      "path": "./tsconfig.api.json"
+    },
+    {
       "path": "./tsconfig.vitest.json"
     }
   ]

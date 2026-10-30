@@ -3,7 +3,16 @@
 
   // Override to include only test files and clear exclusions.
   // Application code imported in tests is automatically included via module resolution.
-  "include": ["app/**/__tests__/*", "engine/**/*.test.ts", "engine/testkit/**/*", "env.d.ts"],
+  "include": [
+    "app/**/__tests__/*",
+    "engine/**/*.test.ts",
+    "engine/testkit/**/*",
+    "api/src/**/*.test.ts",
+    "api/src/fakeSheets.ts",
+    "api/src/fakeGoogle.ts",
+    "api/src/google.d.ts",
+    "env.d.ts"
+  ],
   "exclude": [],
 
   "compilerOptions": {

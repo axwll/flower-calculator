@@ -24,3 +24,5 @@ npm run dev
 | `npm run test`          | Vitest run                                          |
 | `npm run test:coverage` | Vitest with coverage (`engine/` needs at least 90%) |
 | `npm run check`         | Type check, lint, format check and tests            |
+| `npm run api:build`     | Build the Apps Script backend into `api/build`      |
+| `npm run api:push`      | Build and push the backend with clasp               |

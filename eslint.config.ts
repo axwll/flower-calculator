@@ -14,6 +14,10 @@ const FIXTURES_IMPORT = {
   group: ['**/fixtures/**'],
   message: 'fixtures/ is test data and must not be bundled into the app.',
 }
+const API_BOUNDARY_IMPORT = {
+  group: ['vue', 'vue/*', '@vue/*', 'pinia', 'pinia/*', 'dexie', 'dexie/*', '@/*', '**/app/**'],
+  message: 'api/ runs on Apps Script. Only api/src/seedData.ts may reach into app/.',
+}
 const ENGINE_BOUNDARY_IMPORT = {
   group: [
     'vue',
@@ -36,14 +40,14 @@ export default defineConfigWithVueTs(
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'api/build/**']),
 
   ...pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['app/**/__tests__/*', 'engine/**/*.test.ts'],
+    files: ['app/**/__tests__/*', 'engine/**/*.test.ts', 'api/src/**/*.test.ts'],
   },
 
   {
@@ -79,6 +83,24 @@ export default defineConfigWithVueTs(
     files: ['engine/**/*.test.ts', 'engine/testkit/**'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [ENGINE_BOUNDARY_IMPORT] }],
+    },
+  },
+
+  {
+    name: 'api/boundary',
+    files: ['api/src/**/*.ts'],
+    ignores: ['api/src/seedData.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [API_BOUNDARY_IMPORT, FIXTURES_IMPORT] }],
+      'no-restricted-globals': [
+        'error',
+        'window',
+        'document',
+        'navigator',
+        'localStorage',
+        'indexedDB',
+        'fetch',
+      ],
     },
   },
 

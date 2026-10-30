@@ -89,6 +89,16 @@ export interface EventPlan {
   gatherNotes?: Record<string, string>
 }
 
+/** The shared data the backend serves. */
+export interface MasterData {
+  version: number
+  flowers: Flower[]
+  suppliers: Supplier[]
+  designs: Design[]
+  recipes: Recipe[]
+  prices: PriceReport[]
+}
+
 export type NeedsDataReason =
   'no-price' | 'no-bunch-size' | 'override-unavailable' | 'unknown-flower'
 

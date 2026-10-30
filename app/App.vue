@@ -2,12 +2,17 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { useCatalogueStore } from './stores/catalogue'
 import { useEventStore } from './stores/event'
 import { useInstallStore } from './stores/install'
+import { usePricesStore } from './stores/prices'
 import { plural } from './wording'
 
 const route = useRoute()
 const store = useEventStore()
+
+const prices = usePricesStore()
+void useCatalogueStore().start().then(prices.start)
 
 // Created here because the browser's install prompt can fire before any screen needs it.
 useInstallStore()

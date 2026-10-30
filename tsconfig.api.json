@@ -1,0 +1,18 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "include": ["api/src/**/*"],
+  "exclude": ["api/src/**/*.test.ts", "api/src/fakeSheets.ts", "api/src/fakeGoogle.ts"],
+  "compilerOptions": {
+    // Apps Script has no DOM.
+    "lib": ["ES2022"],
+    "types": [],
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@engine": ["./engine/index.ts"]
+    },
+
+    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
+    // Specified here to keep it out of the root directory.
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.api.tsbuildinfo"
+  }
+}

@@ -5,10 +5,15 @@ import InstallGuide from '../components/InstallGuide.vue'
 import { backupFileName, buildBackup, parseBackup } from '../storage/backup'
 import { useEventStore } from '../stores/event'
 import { useInstallStore } from '../stores/install'
+import { usePricesStore } from '../stores/prices'
 import { plural } from '../wording'
 
 const store = useEventStore()
 const install = useInstallStore()
+const prices = usePricesStore()
+
+const nickname = ref(prices.nickname)
+const adminKey = ref(prices.adminKey)
 
 const message = ref('')
 const problem = ref('')
@@ -57,6 +62,31 @@ async function restoreBackup(event: Event) {
   <section class="page">
     <h1>Settings</h1>
 
+    <h2>You</h2>
+    <div class="card">
+      <label class="field">
+        <span class="field-label">Nickname</span>
+        <input
+          v-model="nickname"
+          name="nickname"
+          type="text"
+          autocomplete="off"
+          @input="prices.setNickname(nickname)"
+        />
+      </label>
+      <p class="muted small">Shown beside the prices you report.</p>
+      <label class="field">
+        <span class="field-label">Admin key (optional)</span>
+        <input
+          v-model="adminKey"
+          name="admin-key"
+          type="password"
+          autocomplete="off"
+          @input="prices.setAdminKey(adminKey)"
+        />
+      </label>
+    </div>
+
     <h2>Backups</h2>
     <div class="card">
       <p class="muted small">
@@ -88,7 +118,7 @@ async function restoreBackup(event: Event) {
     <p v-if="install.help === 'installed'" class="muted">The app is installed.</p>
     <InstallGuide />
 
-    <p class="muted">Coming later: thresholds and nickname.</p>
+    <p class="muted">Coming later: thresholds.</p>
   </section>
 </template>
 

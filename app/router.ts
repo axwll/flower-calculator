@@ -8,8 +8,11 @@ import EventSetupView from './views/EventSetupView.vue'
 import EventsView from './views/EventsView.vue'
 import PaletteView from './views/PaletteView.vue'
 import PlaceholderView from './views/PlaceholderView.vue'
+import PriceFlowerView from './views/PriceFlowerView.vue'
+import PricesView from './views/PricesView.vue'
 import ReviewView from './views/ReviewView.vue'
 import SettingsView from './views/SettingsView.vue'
+import ShopView from './views/ShopView.vue'
 import WorkPlanView from './views/WorkPlanView.vue'
 
 /** Hash URLs, because GitHub Pages cannot serve deep links. */
@@ -36,11 +39,9 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
           { path: 'work-plan', name: 'work-plan', component: WorkPlanView },
         ],
       },
-      {
-        path: '/prices',
-        component: PlaceholderView,
-        props: { title: 'Prices', detail: 'Live prices from suppliers.' },
-      },
+      { path: '/prices', component: PricesView },
+      { path: '/prices/shop', component: ShopView },
+      { path: '/prices/:flowerId', component: PriceFlowerView },
       {
         path: '/library',
         component: PlaceholderView,
