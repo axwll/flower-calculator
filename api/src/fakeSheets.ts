@@ -1,17 +1,26 @@
+import { TABS } from './core'
 import type { Cache, Deps, Sheets, TabName } from './core'
 
 /** Test-only. Holds tabs as rows of strings, the way the real Sheet hands them back. */
 export function fakeSheets(): Sheets & {
   tabs: Map<TabName, string[][]>
+  headers: Map<TabName, string[]>
   meta: Map<string, string>
 } {
   const tabs = new Map<TabName, string[][]>()
+  const headers = new Map<TabName, string[]>()
   const meta = new Map<string, string>()
   return {
     tabs,
+    headers,
     meta,
     hasTab: (tab) => tabs.has(tab),
-    createTab: (tab) => void tabs.set(tab, []),
+    createTab: (tab) => {
+      tabs.set(tab, [])
+      headers.set(tab, [...TABS[tab]])
+    },
+    readHeaders: (tab) => headers.get(tab) ?? [],
+    writeHeaders: (tab, names) => void headers.set(tab, names),
     readRows: (tab) => tabs.get(tab) ?? [],
     appendRows: (tab, rows) => void tabs.set(tab, [...(tabs.get(tab) ?? []), ...rows]),
     readMeta: (key) => meta.get(key) ?? null,

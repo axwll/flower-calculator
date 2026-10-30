@@ -1,15 +1,26 @@
-import type { MasterData, PriceReport } from '@engine'
+import type { Design, Flower, MasterData, PriceReport, RecipeDraft, Supplier } from '@engine'
 
 export type MasterReply =
   { status: 'ok'; data: MasterData } | { status: 'unchanged' } | { status: 'failed' }
 
 /** `retry` means try again later. `refused` means the server said no, so retrying won't help. */
 export type SendResult =
-  { status: 'sent' } | { status: 'retry' } | { status: 'refused'; message: string }
+  | { status: 'sent' }
+  | { status: 'retry' }
+  | { status: 'refused'; message: string }
+  | { status: 'not-admin'; message: string }
+
+export type AdminEdit =
+  | { action: 'saveFlower'; flower: Flower }
+  | { action: 'saveSupplier'; supplier: Supplier }
+  | { action: 'saveDesign'; design: Design; recipes?: RecipeDraft[] }
+  | { action: 'saveRecipe'; recipe: RecipeDraft }
 
 export type ApiAction =
   | { action: 'reportPrice'; report: PriceReport }
   | { action: 'voidPrice'; reportId: string; nickname: string; adminKey?: string }
+  | { action: 'checkAdmin'; adminKey: string }
+  | (AdminEdit & { adminKey: string; nickname: string })
 
 export interface ApiClient {
   fetchMaster(since?: number): Promise<MasterReply>
@@ -68,6 +79,9 @@ export function httpClient(url: string, key: string): ApiClient {
         )
         if (reply?.status === 'ok') return { status: 'sent' }
         if (reply?.status !== 'error' || reply.code === 'busy') return { status: 'retry' }
+        if (reply.code === 'not-admin') {
+          return { status: 'not-admin', message: String(reply.message) }
+        }
         return { status: 'refused', message: String(reply.message) }
       } catch {
         return { status: 'retry' }

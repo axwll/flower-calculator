@@ -4,15 +4,17 @@ import { computed, ref, watch } from 'vue'
 import { chooseSupplier, formatPence, parsePounds, resolveOffers } from '@engine'
 import type { Flower } from '@engine'
 
-import { DEFAULT_SETTINGS, isBigChange } from '../pricing'
+import { isBigChange } from '../pricing'
 import { useCatalogueStore } from '../stores/catalogue'
 import { usePricesStore } from '../stores/prices'
+import { useThresholdsStore } from '../stores/thresholds'
 
 const props = defineProps<{ flower: Flower; supplierId?: string }>()
 const emit = defineEmits<{ saved: [supplierId: string] }>()
 
 const catalogue = useCatalogueStore()
 const prices = usePricesStore()
+const thresholds = useThresholdsStore()
 
 const activeSuppliers = computed(() => catalogue.suppliers.filter((item) => item.active))
 
@@ -20,7 +22,7 @@ function offers() {
   return resolveOffers(
     props.flower,
     catalogue.activePrices,
-    DEFAULT_SETTINGS,
+    thresholds.settings,
     new Date().toISOString(),
   )
 }
@@ -67,7 +69,7 @@ function submit() {
   const before = offerAt(supplier.value)?.pricePence
   if (
     before !== undefined &&
-    isBigChange(before, pricePence, DEFAULT_SETTINGS.bigChangePercent) &&
+    isBigChange(before, pricePence, thresholds.settings.bigChangePercent) &&
     !window.confirm(`Was ${formatPence(before)}, now ${formatPence(pricePence)}. Is that right?`)
   ) {
     return

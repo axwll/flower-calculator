@@ -34,6 +34,20 @@ describe('googleSheets', () => {
     expect(googleSheets().hasTab('Flowers')).toBe(false)
   })
 
+  it('reads and adds to the header row without moving rows', () => {
+    const sheets = googleSheets()
+    sheets.createTab('Designs')
+    sheets.appendRows('Designs', [['a', 'A', 'Bridal', 'FALSE', 'FALSE', 'now']])
+    const old = TABS.Designs.slice(0, 6)
+    google.grids.get('Designs')![0] = [...old]
+
+    expect(sheets.readHeaders('Designs')).toEqual(old)
+    sheets.writeHeaders('Designs', [...TABS.Designs])
+
+    expect(sheets.readHeaders('Designs')).toEqual([...TABS.Designs])
+    expect(sheets.readRows('Designs')[0]?.slice(0, 2)).toEqual(['a', 'A'])
+  })
+
   it('reads rows without the header', () => {
     const sheets = googleSheets()
     sheets.createTab('Suppliers')

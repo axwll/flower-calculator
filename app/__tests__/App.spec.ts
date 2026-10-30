@@ -24,13 +24,12 @@ describe('App shell', () => {
   it.each([
     ['Library', '/library'],
     ['Settings', '/settings'],
-  ])('opens %s, which says it is coming later', async (label, path) => {
+  ])('opens %s', async (label, path) => {
     const { wrapper, router } = await mountApp()
     await router.push(path)
     await flushPromises()
 
     expect(wrapper.find('h1').text()).toBe(label)
-    expect(wrapper.text()).toContain('Coming later')
   })
 
   it('marks the current tab', async () => {

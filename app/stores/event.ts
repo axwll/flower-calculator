@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, toRaw, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { allocate, chooseSupplier, combineDesignFlowers, expandPlan, resolveOffers } from '@engine'
 import type {
@@ -11,16 +11,17 @@ import type {
   Offer,
   OfferResolution,
   PlanDesign,
+  Recipe,
+  RecipeDraft,
   Role,
   Size,
 } from '@engine'
 
-import { DEFAULT_SETTINGS } from '../pricing'
 import { CURRENT_SCHEMA_VERSION, migrateEvent } from '../storage/migrations'
 import { eventRepository } from '../storage/repository'
+import { ROLES } from '../wording'
 import { useCatalogueStore } from './catalogue'
-
-const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
+import { useThresholdsStore } from './thresholds'
 
 export interface WorkPlanCard {
   designIndex: number
@@ -37,6 +38,11 @@ export interface NewEvent {
   targetBudgetPence?: number
 }
 
+/** The event keeps its leave-out list on the design, so only the lines come across. */
+function recipeCopy({ designId, size, lines, version }: Recipe): Recipe {
+  return { designId, size, lines: lines.map((line) => ({ ...line })), version }
+}
+
 /** Vue's proxies can't go into IndexedDB, and copies must share nothing with the original. */
 function toPlain(event: EventPlan): EventPlan {
   return JSON.parse(JSON.stringify(event)) as EventPlan
@@ -49,6 +55,7 @@ function newEventId(): string {
 }
 
 export const useEventStore = defineStore('event', () => {
+  const thresholds = useThresholdsStore()
   const catalogue = useCatalogueStore()
 
   const repository = eventRepository()
@@ -134,14 +141,15 @@ export const useEventStore = defineStore('event', () => {
       size,
       quantity: 0,
       enabled: !optional,
-      recipe: structuredClone(toRaw(recipe)),
-      excludedFlowerIds: [],
+      recipe: recipeCopy(recipe),
+      excludedFlowerIds: [...(recipe.excludedFlowerIds ?? [])],
     }
   }
 
   function createEvent(details: NewEvent): string {
     const id = newEventId()
-    const designs = catalogue.designs.flatMap((design) => {
+    const inUse = catalogue.designs.filter((design) => design.active !== false)
+    const designs = inUse.flatMap((design) => {
       const size = catalogue.defaultSize(design.id)
       return (size && planDesign(design.id, size, design.optional)) || []
     })
@@ -153,7 +161,7 @@ export const useEventStore = defineStore('event', () => {
       designs,
       palette: { focal: [], secondary: [], filler: [], foliage: [], accent: [] },
       supplierChoice: {},
-      settings: { ...DEFAULT_SETTINGS },
+      settings: { ...thresholds.settings },
       gatherNotes: {},
     }
     events.value.push(event)
@@ -208,7 +216,23 @@ export const useEventStore = defineStore('event', () => {
     const recipe = design && catalogue.recipeFor(design.designId, size)
     if (!design || !recipe) return
     design.size = size
-    design.recipe = structuredClone(toRaw(recipe))
+    design.recipe = recipeCopy(recipe)
+    const leftOut = new Set([...design.excludedFlowerIds, ...(recipe.excludedFlowerIds ?? [])])
+    design.excludedFlowerIds = [...leftOut]
+  }
+
+  /** An event's recipe as the Library would hold it. Lines at zero stems are dropped. */
+  function libraryDraft(designIndex: number): RecipeDraft | null {
+    const design = current.value?.designs[designIndex]
+    if (!design) return null
+    return {
+      designId: design.designId,
+      size: design.size,
+      lines: recipeCopy(design.recipe).lines.filter((line) => line.stemsPerUnit > 0),
+      ...(design.excludedFlowerIds.length > 0
+        ? { excludedFlowerIds: [...design.excludedFlowerIds] }
+        : {}),
+    }
   }
 
   function setLineStems(designIndex: number, lineIndex: number, stems: number) {
@@ -318,5 +342,6 @@ export const useEventStore = defineStore('event', () => {
     setSize,
     setLineStems,
     swapLineForFlower,
+    libraryDraft,
   }
 })

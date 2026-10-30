@@ -14,7 +14,11 @@ const catalogue = useCatalogueStore()
 const store = useEventStore()
 
 const recipeOpen = ref(false)
-const sizes = computed(() => catalogue.sizesFor(props.design.id))
+/** An event keeps a size retired after it was chosen. */
+const sizes = computed(() => {
+  const inUse = catalogue.sizesFor(props.design.id)
+  return inUse.includes(props.entry.size) ? inUse : [props.entry.size, ...inUse]
+})
 
 function onSize(event: Event) {
   store.setSize(props.designIndex, (event.target as HTMLSelectElement).value as Size)

@@ -4,6 +4,7 @@ import type {
   MasterData,
   PriceReport,
   Recipe,
+  RecipeDraft,
   RecipeLine,
   Role,
   Size,
@@ -27,8 +28,8 @@ export const TABS = {
     'reportedBy',
     'status',
   ],
-  Designs: ['id', 'name', 'group', 'optional', 'isLeftoverPool', 'updatedAt'],
-  Recipes: ['designId', 'size', 'version', 'updatedAt'],
+  Designs: ['id', 'name', 'group', 'optional', 'isLeftoverPool', 'updatedAt', 'active'],
+  Recipes: ['designId', 'size', 'version', 'updatedAt', 'active', 'excludedFlowerIds'],
   RecipeLines: [
     'designId',
     'size',
@@ -49,6 +50,8 @@ export type TabName = keyof typeof TABS
 export interface Sheets {
   hasTab(tab: TabName): boolean
   createTab(tab: TabName): void
+  readHeaders(tab: TabName): string[]
+  writeHeaders(tab: TabName, headers: string[]): void
   readRows(tab: TabName): string[][]
   appendRows(tab: TabName, rows: string[][]): void
   readMeta(key: string): string | null
@@ -78,6 +81,11 @@ export type SeedData = Omit<MasterData, 'version'>
 const VERSION_KEY = 'dataVersion'
 const MAX_NOTE_LENGTH = 500
 const MAX_NICKNAME_LENGTH = 40
+const MAX_NAME_LENGTH = 80
+const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
+const SIZES: Size[] = ['Small', 'Medium', 'Large', 'Fixed']
+const SOLD_AS: SoldAs[] = ['bunch', 'stem', 'foraged']
+const SUPPLIER_TYPES: Supplier['type'][] = ['wholesaler', 'supermarket', 'other']
 
 function bool(value: boolean | undefined): string {
   return value ? 'TRUE' : 'FALSE'
@@ -104,7 +112,7 @@ function rowToFlower([id = '', name = '', colour, roles = '', soldAs, track, act
   const flower: Flower = {
     id,
     name,
-    roles: roles.split(',').flatMap((role) => (role.trim() ? [role.trim() as Role] : [])),
+    roles: list(roles) as Role[],
     soldAs: soldAs as SoldAs,
     trackLeftovers: isTrue(track),
     active: isTrue(active),
@@ -128,12 +136,25 @@ function designToRow(design: Design, at: string): string[] {
     bool(design.optional),
     bool(design.isLeftoverPool),
     at,
+    bool(design.active !== false),
   ]
 }
 
-function rowToDesign([id = '', name = '', group = '', optional, pool]: string[]): Design {
-  const design: Design = { id, name, group, optional: isTrue(optional) }
-  return isTrue(pool) ? { ...design, isLeftoverPool: true } : design
+/** Rows from before a column existed have it blank, which counts as active. */
+function isRetired(cell: string | undefined): boolean {
+  return cell?.toUpperCase() === 'FALSE'
+}
+
+function rowToDesign(row: string[]): Design {
+  const [id = '', name = '', group = '', optional, pool, , active] = row
+  return {
+    id,
+    name,
+    group,
+    optional: isTrue(optional),
+    ...(isTrue(pool) ? { isLeftoverPool: true } : {}),
+    ...(isRetired(active) ? { active: false } : {}),
+  }
 }
 
 function priceToRow(price: PriceReport): string[] {
@@ -168,6 +189,21 @@ function rowToPrice(row: string[]): PriceReport {
   }
 }
 
+function recipeToRow(recipe: Recipe, at: string): string[] {
+  return [
+    recipe.designId,
+    recipe.size,
+    String(recipe.version),
+    at,
+    bool(recipe.active !== false),
+    (recipe.excludedFlowerIds ?? []).join(', '),
+  ]
+}
+
+function list(cell: string): string[] {
+  return cell.split(',').flatMap((item) => (item.trim() ? [item.trim()] : []))
+}
+
 function lineToRow(recipe: Recipe, line: RecipeLine, lineIndex: number): string[] {
   return [
     recipe.designId,
@@ -197,9 +233,18 @@ function latestById(rows: string[][]): string[][] {
 
 function readRecipes(sheets: Sheets): Recipe[] {
   const newest = new Map<string, Recipe>()
-  for (const [designId = '', size, version] of sheets.readRows('Recipes')) {
+  for (const row of sheets.readRows('Recipes')) {
+    const [designId = '', size, version, , active, excluded = ''] = row
     const key = `${designId}/${size}`
-    const recipe = { designId, size: size as Size, version: Number(version), lines: [] }
+    const leftOut = list(excluded)
+    const recipe: Recipe = {
+      designId,
+      size: size as Size,
+      version: Number(version),
+      lines: [],
+      ...(isRetired(active) ? { active: false } : {}),
+      ...(leftOut.length > 0 ? { excludedFlowerIds: leftOut } : {}),
+    }
     if (recipe.version >= (newest.get(key)?.version ?? 0)) newest.set(key, recipe)
   }
 
@@ -243,6 +288,9 @@ export function bumpVersion(sheets: Sheets): number {
 export function runSetup(sheets: Sheets, seed: SeedData, now: string): void {
   for (const tab of Object.keys(TABS) as TabName[]) {
     if (!sheets.hasTab(tab)) sheets.createTab(tab)
+    else if (sheets.readHeaders(tab).length < TABS[tab].length) {
+      sheets.writeHeaders(tab, [...TABS[tab]])
+    }
   }
   if (sheets.readRows('Flowers').length > 0) return
 
@@ -264,7 +312,7 @@ export function runSetup(sheets: Sheets, seed: SeedData, now: string): void {
   )
   sheets.appendRows(
     'Recipes',
-    seed.recipes.map((recipe) => [recipe.designId, recipe.size, String(recipe.version), now]),
+    seed.recipes.map((recipe) => recipeToRow(recipe, now)),
   )
   sheets.appendRows(
     'RecipeLines',
@@ -346,15 +394,13 @@ function reportPrice(request: Record<string, unknown>, deps: Deps): Reply {
 }
 
 function voidPrice(request: Record<string, unknown>, deps: Deps): Reply {
-  const { reportId, nickname, adminKey } = request
+  const { reportId, nickname } = request
   const master = readMaster(deps.sheets)
   const report = master.prices.find((price) => price.id === reportId)
   if (!report) return refuse('not-found', 'That price report no longer exists.')
   if (report.status === 'voided') return { status: 'ok', version: master.version, duplicate: true }
 
-  const configured = deps.adminKey()
-  const isAdmin = Boolean(configured) && adminKey === configured
-  if (!isAdmin && report.reportedBy !== nickname) {
+  if (!isAdmin(request, deps) && report.reportedBy !== nickname) {
     return refuse('not-yours', 'Only the person who reported a price can void it.')
   }
 
@@ -363,10 +409,197 @@ function voidPrice(request: Record<string, unknown>, deps: Deps): Reply {
   return { status: 'ok', version: bumpVersion(deps.sheets) }
 }
 
+function logged(actor: string, action: string, detail: string, deps: Deps): Reply {
+  deps.sheets.appendRows('Changelog', [[deps.now(), actor, action, detail]])
+  return { status: 'ok', version: bumpVersion(deps.sheets) }
+}
+
+function isAdmin(request: Record<string, unknown>, deps: Deps): boolean {
+  const configured = deps.adminKey()
+  return Boolean(configured) && request.adminKey === configured
+}
+
+function nameProblem(value: unknown, missing: string): string | null {
+  if (!isText(value)) return missing
+  return value.length > MAX_NAME_LENGTH ? 'That name is too long.' : null
+}
+
+function isChoice<T>(value: unknown, choices: readonly T[]): boolean {
+  return choices.includes(value as T)
+}
+
+function flowerProblem(raw: Record<string, unknown>): string | null {
+  if (!isText(raw.id)) return 'A flower needs an id.'
+  const name = nameProblem(raw.name, 'A flower needs a name.')
+  if (name) return name
+  if (!Array.isArray(raw.roles) || raw.roles.length === 0) {
+    return 'A flower needs at least one role.'
+  }
+  if (!raw.roles.every((role) => isChoice(role, ROLES))) return 'Unknown role.'
+  if (!isChoice(raw.soldAs, SOLD_AS)) return 'Unknown sold-as choice.'
+  if (raw.colour !== undefined && typeof raw.colour !== 'string') return 'Invalid flower details.'
+  if (typeof raw.trackLeftovers !== 'boolean' || typeof raw.active !== 'boolean') {
+    return 'Invalid flower details.'
+  }
+  return null
+}
+
+function saveFlower(raw: Record<string, unknown>, actor: string, deps: Deps): Reply {
+  const problem = flowerProblem(raw)
+  if (problem) return refuse('invalid', problem)
+
+  const flower = raw as unknown as Flower
+  deps.sheets.appendRows('Flowers', [flowerToRow(flower, deps.now())])
+  return logged(actor, 'save-flower', `${flower.id}: ${flower.name}`, deps)
+}
+
+function supplierProblem(raw: Record<string, unknown>): string | null {
+  if (!isText(raw.id)) return 'A supplier needs an id.'
+  const name = nameProblem(raw.name, 'A supplier needs a name.')
+  if (name) return name
+  if (!isChoice(raw.type, SUPPLIER_TYPES)) return 'Unknown supplier type.'
+  return typeof raw.active === 'boolean' ? null : 'Invalid supplier details.'
+}
+
+function saveSupplier(raw: Record<string, unknown>, actor: string, deps: Deps): Reply {
+  const problem = supplierProblem(raw)
+  if (problem) return refuse('invalid', problem)
+
+  const supplier = raw as unknown as Supplier
+  deps.sheets.appendRows('Suppliers', [supplierToRow(supplier, deps.now())])
+  return logged(actor, 'save-supplier', `${supplier.id}: ${supplier.name}`, deps)
+}
+
+function designProblem(raw: Record<string, unknown>): string | null {
+  if (!isText(raw.id)) return 'A design needs an id.'
+  const name = nameProblem(raw.name, 'A design needs a name.')
+  if (name) return name
+  if (!isText(raw.group)) return 'A design needs a group.'
+  if (typeof raw.optional !== 'boolean') return 'Invalid design details.'
+  return raw.active === undefined || typeof raw.active === 'boolean'
+    ? null
+    : 'Invalid design details.'
+}
+
+function lineProblem(line: Partial<RecipeLine>, master: MasterData): string | null {
+  if (line.kind === 'role' && !isChoice(line.role, ROLES)) return 'Unknown role.'
+  if (line.kind === 'named' && !master.flowers.some(({ id }) => id === line.flowerId)) {
+    return 'Unknown flower.'
+  }
+  if (line.kind !== 'role' && line.kind !== 'named') return 'Invalid recipe line.'
+  return Number.isInteger(line.stemsPerUnit) && (line.stemsPerUnit as number) > 0
+    ? null
+    : 'Every line needs at least one stem.'
+}
+
+function recipeProblem(raw: Partial<RecipeDraft>, master: MasterData): string | null {
+  if (!isChoice(raw.size, SIZES)) return 'Unknown size.'
+  if (!Array.isArray(raw.lines) || raw.lines.length === 0) {
+    return 'A recipe needs at least one line.'
+  }
+  for (const line of raw.lines) {
+    const problem = lineProblem(line, master)
+    if (problem) return problem
+  }
+  const leftOut = raw.excludedFlowerIds ?? []
+  if (!leftOut.every((flowerId) => master.flowers.some(({ id }) => id === flowerId))) {
+    return 'Unknown flower.'
+  }
+  return null
+}
+
+function clashesOverFixed(draft: RecipeDraft, master: MasterData): boolean {
+  if (draft.active === false) return false
+  return master.recipes.some(
+    (recipe) =>
+      recipe.designId === draft.designId &&
+      recipe.size !== draft.size &&
+      recipe.active !== false &&
+      (recipe.size === 'Fixed' || draft.size === 'Fixed'),
+  )
+}
+
+function appendRecipe(draft: RecipeDraft, master: MasterData, deps: Deps): Recipe {
+  const earlier = master.recipes.find(
+    (recipe) => recipe.designId === draft.designId && recipe.size === draft.size,
+  )
+  const recipe = { ...draft, version: (earlier?.version ?? 0) + 1 }
+  deps.sheets.appendRows('Recipes', [recipeToRow(recipe, deps.now())])
+  deps.sheets.appendRows(
+    'RecipeLines',
+    recipe.lines.map((line, index) => lineToRow(recipe, line, index)),
+  )
+  return recipe
+}
+
+function saveDesign(request: Record<string, unknown>, actor: string, deps: Deps): Reply {
+  const raw = (request.design ?? {}) as Record<string, unknown>
+  const drafts = (request.recipes ?? []) as Partial<RecipeDraft>[]
+  const master = readMaster(deps.sheets)
+
+  const problem = designProblem(raw)
+  if (problem) return refuse('invalid', problem)
+  for (const draft of drafts) {
+    const recipeIssue = draft.designId === raw.id ? recipeProblem(draft, master) : 'Unknown design.'
+    if (recipeIssue) return refuse('invalid', recipeIssue)
+  }
+
+  // Being a leftover pool comes with the design, so an edit can't switch it on or off.
+  const { isLeftoverPool: _pool, ...fields } = raw as unknown as Design
+  const existing = master.designs.find(({ id }) => id === fields.id)
+  const design = { ...fields, ...(existing?.isLeftoverPool ? { isLeftoverPool: true } : {}) }
+
+  deps.sheets.appendRows('Designs', [designToRow(design, deps.now())])
+  for (const draft of drafts) appendRecipe(draft as RecipeDraft, master, deps)
+  return logged(actor, 'save-design', `${design.id}: ${design.name}`, deps)
+}
+
+function saveRecipe(request: Record<string, unknown>, actor: string, deps: Deps): Reply {
+  const { version: _version, ...draft } = (request.recipe ?? {}) as Partial<Recipe>
+  const master = readMaster(deps.sheets)
+
+  const design = master.designs.find(({ id }) => id === draft.designId)
+  if (!design) return refuse('invalid', 'Unknown design.')
+  if (design.isLeftoverPool) return refuse('invalid', 'A leftover pool has no recipe.')
+  const problem = recipeProblem(draft, master)
+  if (problem) return refuse('invalid', problem)
+  if (clashesOverFixed(draft as RecipeDraft, master)) {
+    return refuse('invalid', 'Fixed can’t sit beside other sizes.')
+  }
+
+  const recipe = appendRecipe(draft as RecipeDraft, master, deps)
+  const detail = `${recipe.designId} ${recipe.size}, version ${recipe.version}`
+  return logged(actor, 'save-recipe', detail, deps)
+}
+
+/** Every Library edit passes through here, so none can skip the key or the Changelog. */
+function routeAdmin(request: Record<string, unknown>, deps: Deps): Reply {
+  if (!isAdmin(request, deps)) return refuse('not-admin', 'That admin key isn’t right.')
+  if (request.action === 'checkAdmin') return { status: 'ok' }
+
+  const { nickname } = request
+  if (!isText(nickname) || nickname.length > MAX_NICKNAME_LENGTH) {
+    return refuse('invalid', 'A nickname is needed.')
+  }
+
+  if (request.action === 'saveFlower') {
+    return saveFlower((request.flower ?? {}) as Record<string, unknown>, nickname, deps)
+  }
+  if (request.action === 'saveSupplier') {
+    return saveSupplier((request.supplier ?? {}) as Record<string, unknown>, nickname, deps)
+  }
+  return request.action === 'saveDesign'
+    ? saveDesign(request, nickname, deps)
+    : saveRecipe(request, nickname, deps)
+}
+
+const ADMIN_ACTIONS = ['checkAdmin', 'saveFlower', 'saveSupplier', 'saveDesign', 'saveRecipe']
+
 function route(request: Record<string, unknown>, deps: Deps): Reply {
   if (request.key !== deps.appKey) return refuse('bad-key', 'This app is out of date.')
   if (request.action === 'reportPrice') return reportPrice(request, deps)
   if (request.action === 'voidPrice') return voidPrice(request, deps)
+  if (ADMIN_ACTIONS.includes(String(request.action))) return routeAdmin(request, deps)
   return refuse('invalid', 'Unknown action.')
 }
 

@@ -6,9 +6,9 @@ import { formatPence, resolveOffers } from '@engine'
 
 import PriceAge from '../components/PriceAge.vue'
 import PriceForm from '../components/PriceForm.vue'
-import { DEFAULT_SETTINGS } from '../pricing'
 import { useCatalogueStore } from '../stores/catalogue'
 import { usePricesStore } from '../stores/prices'
+import { useThresholdsStore } from '../stores/thresholds'
 
 const HISTORY_LENGTH = 10
 
@@ -16,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
 const prices = usePricesStore()
+const thresholds = useThresholdsStore()
 
 const flower = computed(() =>
   catalogue.flowers.find((item) => item.id === String(route.params.flowerId)),
@@ -29,7 +30,7 @@ const offers = computed(() =>
     ? resolveOffers(
         flower.value,
         catalogue.activePrices,
-        DEFAULT_SETTINGS,
+        thresholds.settings,
         new Date().toISOString(),
       ).offers
     : [],

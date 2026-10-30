@@ -28,6 +28,8 @@ export const useCatalogueStore = defineStore('catalogue', () => {
   const source = ref<CatalogueSource>('seed')
   const version = ref<number | undefined>(undefined)
 
+  const activeFlowers = computed(() => flowers.value.filter((flower) => flower.active))
+
   /** Every report, with this phone's unsent changes applied. */
   const allPrices = computed(() => {
     const known = new Set(prices.value.map((price) => price.id))
@@ -115,7 +117,7 @@ export const useCatalogueStore = defineStore('catalogue', () => {
 
   function sizesFor(designId: string): Size[] {
     const sizes = recipes.value
-      .filter((recipe) => recipe.designId === designId)
+      .filter((recipe) => recipe.designId === designId && recipe.active !== false)
       .map((recipe) => recipe.size)
     return SIZE_ORDER.filter((size) => sizes.includes(size))
   }
@@ -126,7 +128,9 @@ export const useCatalogueStore = defineStore('catalogue', () => {
   }
 
   function recipeFor(designId: string, size: Size): Recipe | undefined {
-    return recipes.value.find((recipe) => recipe.designId === designId && recipe.size === size)
+    return recipes.value.find(
+      (recipe) => recipe.designId === designId && recipe.size === size && recipe.active !== false,
+    )
   }
 
   function flowerName(id: string): string {
@@ -149,6 +153,7 @@ export const useCatalogueStore = defineStore('catalogue', () => {
     prices,
     pendingReports,
     pendingVoids,
+    activeFlowers,
     allPrices,
     activePrices,
     source,

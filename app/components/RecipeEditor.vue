@@ -5,16 +5,19 @@ import type { PlanDesign, RecipeLine } from '@engine'
 
 import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
+import { useLibraryStore } from '../stores/library'
 import { roleLabel } from '../wording'
 import QuantityStepper from './QuantityStepper.vue'
+import SaveToLibrary from './SaveToLibrary.vue'
 
 const props = defineProps<{ design: PlanDesign; designIndex: number }>()
 
 const catalogue = useCatalogueStore()
 const store = useEventStore()
+const library = useLibraryStore()
 
 const flowerOptions = computed(() =>
-  [...catalogue.flowers].sort((a, b) => a.name.localeCompare(b.name)),
+  [...catalogue.activeFlowers].sort((a, b) => a.name.localeCompare(b.name)),
 )
 
 function lineLabel(line: RecipeLine): string {
@@ -49,6 +52,7 @@ function onSwap(event: Event, lineIndex: number) {
         </select>
       </label>
     </div>
+    <SaveToLibrary v-if="library.adminOn" :design-index="designIndex" />
   </div>
 </template>
 

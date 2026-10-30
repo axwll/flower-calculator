@@ -170,6 +170,24 @@ textarea {
   font: inherit;
 }
 
+.tick {
+  display: flex;
+  min-height: var(--tap);
+  gap: 8px;
+  align-items: center;
+}
+
+.tick input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.choices {
+  padding: 0;
+  border: 0;
+}
+
 .error {
   margin-top: 4px;
   color: var(--bad);

@@ -5,12 +5,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { formatPence, resolveOffers } from '@engine'
 
 import PriceAge from '../components/PriceAge.vue'
-import { DEFAULT_SETTINGS } from '../pricing'
 import { useCatalogueStore } from '../stores/catalogue'
+import { useThresholdsStore } from '../stores/thresholds'
 
 const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
+const thresholds = useThresholdsStore()
 
 const supplierId = ref(typeof route.query.supplier === 'string' ? route.query.supplier : '')
 
@@ -28,7 +29,7 @@ const rows = computed(() => {
   const now = new Date().toISOString()
   return catalogue.flowers.flatMap((flower) => {
     if (!flower.active || flower.soldAs === 'foraged') return []
-    const { offers } = resolveOffers(flower, catalogue.activePrices, DEFAULT_SETTINGS, now)
+    const { offers } = resolveOffers(flower, catalogue.activePrices, thresholds.settings, now)
     const offer = offers.find((item) => item.supplierId === supplierId.value)
     return offer ? [{ flower, offer }] : []
   })

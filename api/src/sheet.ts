@@ -27,6 +27,18 @@ function createTab(tab: TabName): void {
   sheet.setFrozenRows(HEADER_ROWS)
 }
 
+function readHeaders(tab: TabName): string[] {
+  const [row = []] = tabSheet(tab).getRange(1, 1, 1, TABS[tab].length).getDisplayValues()
+  return row.filter((cell) => cell !== '')
+}
+
+/** Only ever adds to the end of the first row, so existing columns keep their places. */
+function writeHeaders(tab: TabName, headers: string[]): void {
+  const row = tabSheet(tab).getRange(1, 1, 1, headers.length)
+  row.setValues([headers])
+  row.setFontWeight('bold')
+}
+
 function appendRows(tab: TabName, rows: string[][]): void {
   const [first] = rows
   if (!first) return
@@ -52,6 +64,8 @@ export function googleSheets(): Sheets {
   return {
     hasTab: (tab) => SpreadsheetApp.getActive().getSheetByName(tab) !== null,
     createTab,
+    readHeaders,
+    writeHeaders,
     readRows: (tab) => dataRows(tabSheet(tab), TABS[tab].length),
     appendRows,
     readMeta: (key) =>

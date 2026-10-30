@@ -1,5 +1,7 @@
 import type { ExpandedLine, LineFlower, NeedsDataReason, Role, Warning } from '@engine'
 
+export const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
+
 const ROLE_LABELS: Record<Role, string> = {
   focal: 'Focal',
   secondary: 'Secondary',

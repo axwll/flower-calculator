@@ -2,18 +2,27 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouterHistory } from 'vue-router'
 
 import { useEventStore } from './stores/event'
+import { useLibraryStore } from './stores/library'
+import DesignEditView from './views/DesignEditView.vue'
 import DesignsView from './views/DesignsView.vue'
 import EventLayout from './views/EventLayout.vue'
 import EventSetupView from './views/EventSetupView.vue'
 import EventsView from './views/EventsView.vue'
+import FlowerEditView from './views/FlowerEditView.vue'
+import LibraryView from './views/LibraryView.vue'
 import PaletteView from './views/PaletteView.vue'
-import PlaceholderView from './views/PlaceholderView.vue'
 import PriceFlowerView from './views/PriceFlowerView.vue'
 import PricesView from './views/PricesView.vue'
 import ReviewView from './views/ReviewView.vue'
 import SettingsView from './views/SettingsView.vue'
 import ShopView from './views/ShopView.vue'
+import SupplierEditView from './views/SupplierEditView.vue'
 import WorkPlanView from './views/WorkPlanView.vue'
+
+/** Tidiness only. The backend checks the admin key on every save. */
+function adminOnly() {
+  return useLibraryStore().adminOn || '/library'
+}
 
 /** Hash URLs, because GitHub Pages cannot serve deep links. */
 export function createAppRouter(history: RouterHistory = createWebHashHistory()) {
@@ -42,10 +51,13 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
       { path: '/prices', component: PricesView },
       { path: '/prices/shop', component: ShopView },
       { path: '/prices/:flowerId', component: PriceFlowerView },
+      { path: '/library', component: LibraryView },
+      { path: '/library/designs/:designId', component: DesignEditView, beforeEnter: adminOnly },
+      { path: '/library/flowers/:flowerId', component: FlowerEditView, beforeEnter: adminOnly },
       {
-        path: '/library',
-        component: PlaceholderView,
-        props: { title: 'Library', detail: 'Editing recipes, flowers and suppliers.' },
+        path: '/library/suppliers/:supplierId',
+        component: SupplierEditView,
+        beforeEnter: adminOnly,
       },
       { path: '/settings', component: SettingsView },
       { path: '/:pathMatch(.*)*', redirect: '/events' },

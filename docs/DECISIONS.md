@@ -115,3 +115,21 @@ The owner asked for this phase to start without approving the brief first, so th
 - **The admin key on a phone is kept in `localStorage`,** and in the offline queue until sent. It's only ever sent to the backend.
 - **Features were reordered:** the queue and voiding logic were built together ahead of their screens, because reports only reach the server through the queue.
 - **Known limit:** the `Prices` tab keeps every row, and all of them are sent to phones, so replies will grow slowly over the years.
+
+## 2026-10-30: Phase 6 decisions
+
+The owner approved the brief and its four recommendations.
+
+- **A variant is a separate design,** copied with all its sizes in one save, because there's one recipe per design and size.
+- **Library recipes can store flowers to leave out.** The list is per recipe, not per role line as the brief first said, to match how events already work. It only affects role lines.
+- **Changing an event's size adds the new recipe's leave-out list** to the event's own, and removes nothing, because the event can't tell where each entry came from.
+- **The backend moves to the owner's mum's account before she enters real data.** This replaces the Phase 5 decision to wait until her data was confirmed. A new Sheet starts from the seed, so anything entered on the test Sheet would be left behind.
+- **Thresholds were added to this phase,** because no phase listed them. They're kept per phone, and new events copy them.
+- **Design and recipe rows gained `active`, and recipes gained `excludedFlowerIds`.** In the app, `active` is left out unless it's false, so older rows, the seed and cached data all count as in use.
+- **`setup` adds missing columns** at the end of the first row and leaves data rows alone.
+- **Admin saves aren't queued.** Saving waits for the reply and a refresh, so it can take several seconds.
+- **A new design doesn't reach new events until it has a recipe,** because events need one to copy.
+- **A leftover pool can't be created or switched off through the app.** Its name, group and in-use setting can be edited.
+- **Rules from the brief:** there's no `Changelog` screen, the role list stays in code, a new size starts from a copy of the one showing, new designs appear at the end of their group, and when two admins edit at once the later save wins.
+- **`FlowerForm` wasn't needed as a separate component.** The form lives in `FlowerEditView`.
+- **Tests were written before the code, but weren't run red first.** Each batch of tests and its code went in together, so the tests haven't been seen failing.

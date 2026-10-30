@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MasterData, PriceReport } from '@engine'
+import type {
+  Design,
+  Flower,
+  MasterData,
+  PriceReport,
+  RecipeDraft,
+  Role,
+  Size,
+  SoldAs,
+  Supplier,
+} from '@engine'
 
 import { TABS, bumpVersion, handlePost, readMaster, respondRead, runSetup } from './core'
 import { fakeCache, fakeDeps, fakeSheets } from './fakeSheets'
@@ -422,5 +432,398 @@ describe('bad requests', () => {
     })
 
     expect(send(deps)).toMatchObject({ status: 'error', code: 'busy' })
+  })
+})
+
+function admin(
+  deps: ReturnType<typeof fakeDeps>,
+  action: string,
+  extra: Record<string, unknown>,
+  adminKey: unknown = 'admin-key',
+) {
+  return post(deps, { action, key: 'app-key', adminKey, nickname: 'Mum', ...extra })
+}
+
+function flower(overrides: Partial<Flower> = {}): Flower {
+  return {
+    id: 'peony-a1b2',
+    name: 'Peony',
+    roles: ['focal'],
+    soldAs: 'stem',
+    trackLeftovers: true,
+    active: true,
+    ...overrides,
+  }
+}
+
+const supplier: Supplier = { id: 'market-a1', name: 'Market', type: 'other', active: true }
+
+const design: Design = { id: 'posy-a1', name: 'Posy', group: 'Bridal', optional: false }
+
+function recipe(overrides: Partial<RecipeDraft> = {}): RecipeDraft {
+  return {
+    designId: 'buttonhole',
+    size: 'Fixed',
+    lines: [{ kind: 'named', flowerId: 'focus-rose', stemsPerUnit: 2 }],
+    ...overrides,
+  }
+}
+
+function changelog(sheets: ReturnType<typeof seededDeps>['sheets']) {
+  return sheets.readRows('Changelog').slice(1)
+}
+
+describe('old Sheets', () => {
+  it('adds missing columns on setup, leaving rows alone', () => {
+    const { sheets, deps } = seededDeps()
+    sheets.headers.set('Designs', [
+      'id',
+      'name',
+      'group',
+      'optional',
+      'isLeftoverPool',
+      'updatedAt',
+    ])
+    const rows = JSON.stringify(sheets.readRows('Designs'))
+    runSetup(sheets, seed, deps.now())
+
+    expect(sheets.readHeaders('Designs')).toEqual([...TABS.Designs])
+    expect(JSON.stringify(sheets.readRows('Designs'))).toBe(rows)
+  })
+
+  it('changes no headers when none are missing', () => {
+    const { sheets, deps } = seededDeps()
+    const written = vi.spyOn(sheets, 'writeHeaders')
+    runSetup(sheets, seed, deps.now())
+
+    expect(written).not.toHaveBeenCalled()
+  })
+
+  it('counts rows from before the new columns as active', () => {
+    const { sheets, deps } = seededDeps()
+    sheets.appendRows('Designs', [['old', 'Old', 'Bridal', 'FALSE', 'FALSE', 'now']])
+    sheets.appendRows('Recipes', [['old', 'Fixed', '1', 'now']])
+    sheets.appendRows('RecipeLines', [['old', 'Fixed', '1', '0', 'role', 'filler', '', '3']])
+    const data = master(deps)
+
+    expect(data.designs.find(({ id }) => id === 'old')).toEqual({
+      id: 'old',
+      name: 'Old',
+      group: 'Bridal',
+      optional: false,
+    })
+    expect(data.recipes.find(({ designId }) => designId === 'old')).toEqual({
+      designId: 'old',
+      size: 'Fixed',
+      version: 1,
+      lines: [{ kind: 'role', role: 'filler', stemsPerUnit: 3 }],
+    })
+  })
+})
+
+describe('checkAdmin', () => {
+  it('accepts the right key', () => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'checkAdmin', {}).status).toBe('ok')
+  })
+
+  it('refuses the wrong key', () => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'checkAdmin', {}, 'guess').code).toBe('not-admin')
+  })
+
+  it('refuses every key when none is set on the server', () => {
+    const { deps } = seededDeps({ adminKey: () => null })
+
+    expect(admin(deps, 'checkAdmin', {}, null).code).toBe('not-admin')
+    expect(admin(deps, 'checkAdmin', {}, '').code).toBe('not-admin')
+  })
+
+  it('still needs the app key', () => {
+    const { deps } = seededDeps()
+
+    expect(post(deps, { action: 'checkAdmin', key: 'old', adminKey: 'admin-key' }).code).toBe(
+      'bad-key',
+    )
+  })
+})
+
+describe.each([
+  ['saveFlower', { flower: flower() }],
+  ['saveSupplier', { supplier }],
+  ['saveDesign', { design }],
+  ['saveRecipe', { recipe: recipe() }],
+])('%s permissions', (action, body) => {
+  it('refuses a wrong key and writes nothing', () => {
+    const { sheets, deps } = seededDeps()
+    const before = JSON.stringify([...sheets.tabs])
+
+    expect(admin(deps, action, body, 'guess').code).toBe('not-admin')
+    expect(JSON.stringify([...sheets.tabs])).toBe(before)
+  })
+
+  it('needs a nickname for the Changelog', () => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, action, { ...body, nickname: ' ' }).code).toBe('invalid')
+  })
+
+  it('bumps the version and logs who did it', () => {
+    const { sheets, deps } = seededDeps()
+    const reply = admin(deps, action, body)
+
+    expect(reply).toMatchObject({ status: 'ok', version: 2 })
+    expect(changelog(sheets).at(-1)?.slice(0, 2)).toEqual([deps.now(), 'Mum'])
+  })
+})
+
+describe('saveFlower', () => {
+  it('adds a flower', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveFlower', { flower: flower({ colour: 'Pink' }) })
+
+    expect(master(deps).flowers.find(({ id }) => id === 'peony-a1b2')).toEqual(
+      flower({ colour: 'Pink' }),
+    )
+  })
+
+  it('replaces an existing flower with a new row', () => {
+    const { sheets, deps } = seededDeps()
+    const rows = sheets.readRows('Flowers').length
+    admin(deps, 'saveFlower', { flower: flower({ id: 'scabious', name: 'Scabious' }) })
+
+    expect(master(deps).flowers.find(({ id }) => id === 'scabious')?.name).toBe('Scabious')
+    expect(sheets.readRows('Flowers')).toHaveLength(rows + 1)
+  })
+
+  it('writes a readable log line', () => {
+    const { sheets, deps } = seededDeps()
+    admin(deps, 'saveFlower', { flower: flower() })
+
+    expect(changelog(sheets).at(-1)?.slice(2)).toEqual(['save-flower', 'peony-a1b2: Peony'])
+  })
+
+  it.each([
+    ['no id', { id: '' }, 'A flower needs an id.'],
+    ['no name', { name: ' ' }, 'A flower needs a name.'],
+    ['a very long name', { name: 'x'.repeat(81) }, 'That name is too long.'],
+    ['no roles', { roles: [] }, 'A flower needs at least one role.'],
+    ['an unknown role', { roles: ['star'] as unknown as Role[] }, 'Unknown role.'],
+    ['an unknown sold as', { soldAs: 'box' as SoldAs }, 'Unknown sold-as choice.'],
+    ['a text flag', { active: 'yes' as unknown as boolean }, 'Invalid flower details.'],
+  ])('refuses %s', (_name, overrides, message) => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'saveFlower', { flower: flower(overrides) })).toMatchObject({
+      code: 'invalid',
+      message,
+    })
+  })
+})
+
+describe('saveSupplier', () => {
+  it('adds a supplier', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveSupplier', { supplier })
+
+    expect(master(deps).suppliers).toContainEqual(supplier)
+  })
+
+  it('retires a supplier and keeps its prices', () => {
+    const { deps } = seededDeps()
+    const prices = master(deps).prices.length
+    const existing = { ...seed.suppliers[0]!, active: false }
+    admin(deps, 'saveSupplier', { supplier: existing })
+
+    expect(master(deps).suppliers).toContainEqual(existing)
+    expect(master(deps).prices).toHaveLength(prices)
+  })
+
+  it.each([
+    ['no id', { ...supplier, id: '' }, 'A supplier needs an id.'],
+    ['no name', { ...supplier, name: '' }, 'A supplier needs a name.'],
+    ['an unknown type', { ...supplier, type: 'shop' }, 'Unknown supplier type.'],
+    ['a text flag', { ...supplier, active: 'no' }, 'Invalid supplier details.'],
+  ])('refuses %s', (_name, value, message) => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'saveSupplier', { supplier: value })).toMatchObject({
+      code: 'invalid',
+      message,
+    })
+  })
+})
+
+describe('saveDesign', () => {
+  it('adds a design', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveDesign', { design })
+
+    expect(master(deps).designs).toContainEqual(design)
+  })
+
+  it('retires a design', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveDesign', { design: { ...design, active: false } })
+
+    expect(master(deps).designs.find(({ id }) => id === design.id)?.active).toBe(false)
+  })
+
+  it('saves a variant and its recipes in one go', () => {
+    const { sheets, deps } = seededDeps()
+    const small = recipe({ designId: design.id, size: 'Small' })
+    const large = recipe({ designId: design.id, size: 'Large', excludedFlowerIds: ['scabious'] })
+    admin(deps, 'saveDesign', { design, recipes: [small, large] })
+
+    const saved = master(deps).recipes.filter(({ designId }) => designId === design.id)
+    expect(saved).toEqual([
+      { ...small, version: 1 },
+      { ...large, version: 1 },
+    ])
+    expect(sheets.readMeta('dataVersion')).toBe('2')
+  })
+
+  it('saves nothing when one of the recipes is bad', () => {
+    const { deps } = seededDeps()
+    const reply = admin(deps, 'saveDesign', {
+      design,
+      recipes: [recipe({ designId: design.id, lines: [] })],
+    })
+
+    expect(reply.code).toBe('invalid')
+    expect(master(deps).designs).not.toContainEqual(design)
+  })
+
+  it('refuses recipes for another design', () => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'saveDesign', { design, recipes: [recipe()] }).code).toBe('invalid')
+  })
+
+  it('keeps a leftover pool as a pool, and never makes a new one', () => {
+    const { deps } = seededDeps()
+    const { isLeftoverPool: _pool, ...vases } = seed.designs.find(({ id }) => id === 'table-vases')!
+    admin(deps, 'saveDesign', { design: { ...vases, name: 'Vases' } })
+    admin(deps, 'saveDesign', { design: { ...design, isLeftoverPool: true } })
+
+    const designs = master(deps).designs
+    expect(designs.find(({ id }) => id === 'table-vases')).toMatchObject({
+      name: 'Vases',
+      isLeftoverPool: true,
+    })
+    expect(designs.find(({ id }) => id === design.id)).toEqual(design)
+  })
+
+  it.each([
+    ['no id', { ...design, id: '' }, 'A design needs an id.'],
+    ['no name', { ...design, name: '' }, 'A design needs a name.'],
+    ['no group', { ...design, group: '' }, 'A design needs a group.'],
+    ['a text flag', { ...design, optional: 'yes' }, 'Invalid design details.'],
+  ])('refuses %s', (_name, value, message) => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'saveDesign', { design: value })).toMatchObject({ code: 'invalid', message })
+  })
+})
+
+describe('saveRecipe', () => {
+  it('sets the next version itself', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveRecipe', { recipe: { ...recipe(), version: 99 } })
+
+    expect(master(deps).recipes.find(({ designId }) => designId === 'buttonhole')).toEqual({
+      ...recipe(),
+      version: 2,
+    })
+  })
+
+  it('keeps the older version in the Sheet', () => {
+    const { sheets, deps } = seededDeps()
+    const rows = sheets.readRows('RecipeLines').length
+    admin(deps, 'saveRecipe', { recipe: recipe() })
+
+    expect(sheets.readRows('RecipeLines')).toHaveLength(rows + 1)
+  })
+
+  it('keeps flowers to leave out', () => {
+    const { deps } = seededDeps()
+    const excludedFlowerIds = ['dahlia-dark', 'dahlia-orange']
+    admin(deps, 'saveRecipe', {
+      recipe: recipe({
+        lines: [{ kind: 'role', role: 'focal', stemsPerUnit: 3 }],
+        excludedFlowerIds,
+      }),
+    })
+
+    expect(
+      master(deps).recipes.find(({ designId }) => designId === 'buttonhole')?.excludedFlowerIds,
+    ).toEqual(excludedFlowerIds)
+  })
+
+  it('retires a size', () => {
+    const { deps } = seededDeps()
+    admin(deps, 'saveRecipe', { recipe: recipe({ active: false }) })
+
+    expect(master(deps).recipes.find(({ designId }) => designId === 'buttonhole')?.active).toBe(
+      false,
+    )
+  })
+
+  it('writes a readable log line', () => {
+    const { sheets, deps } = seededDeps()
+    admin(deps, 'saveRecipe', { recipe: recipe() })
+
+    expect(changelog(sheets).at(-1)?.slice(2)).toEqual([
+      'save-recipe',
+      'buttonhole Fixed, version 2',
+    ])
+  })
+
+  it('lets a retired size be saved beside other sizes', () => {
+    const { deps } = seededDeps()
+    const reply = admin(deps, 'saveRecipe', {
+      recipe: recipe({ designId: 'pedestal', size: 'Fixed', active: false }),
+    })
+
+    expect(reply.status).toBe('ok')
+  })
+
+  it.each([
+    ['an unknown design', { designId: 'nope' }, 'Unknown design.'],
+    ['a leftover pool', { designId: 'table-vases' }, 'A leftover pool has no recipe.'],
+    ['an unknown size', { size: 'Huge' as Size }, 'Unknown size.'],
+    ['no lines', { lines: [] }, 'A recipe needs at least one line.'],
+    [
+      'an unknown flower',
+      { lines: [{ kind: 'named', flowerId: 'nope', stemsPerUnit: 1 }] },
+      'Unknown flower.',
+    ],
+    [
+      'an unknown role',
+      { lines: [{ kind: 'role', role: 'star' as Role, stemsPerUnit: 1 }] },
+      'Unknown role.',
+    ],
+    [
+      'zero stems',
+      { lines: [{ kind: 'named', flowerId: 'focus-rose', stemsPerUnit: 0 }] },
+      'Every line needs at least one stem.',
+    ],
+    [
+      'part of a stem',
+      { lines: [{ kind: 'named', flowerId: 'focus-rose', stemsPerUnit: 1.5 }] },
+      'Every line needs at least one stem.',
+    ],
+    ['an unknown flower to leave out', { excludedFlowerIds: ['nope'] }, 'Unknown flower.'],
+    ['Fixed beside other sizes', { designId: 'pedestal' }, 'Fixed can’t sit beside other sizes.'],
+    ['a size beside Fixed', { size: 'Small' as Size }, 'Fixed can’t sit beside other sizes.'],
+  ] as [string, Partial<RecipeDraft>, string][])('refuses %s', (_name, overrides, message) => {
+    const { deps } = seededDeps()
+
+    expect(admin(deps, 'saveRecipe', { recipe: recipe(overrides) })).toMatchObject({
+      code: 'invalid',
+      message,
+    })
   })
 })

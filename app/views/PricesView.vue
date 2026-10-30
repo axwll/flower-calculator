@@ -4,13 +4,14 @@ import { computed, ref } from 'vue'
 import { formatPence, resolveOffers } from '@engine'
 
 import PriceAge from '../components/PriceAge.vue'
-import { DEFAULT_SETTINGS } from '../pricing'
 import { useCatalogueStore } from '../stores/catalogue'
 import { usePricesStore } from '../stores/prices'
+import { useThresholdsStore } from '../stores/thresholds'
 import { plural } from '../wording'
 
 const catalogue = useCatalogueStore()
 const prices = usePricesStore()
+const thresholds = useThresholdsStore()
 
 const search = ref('')
 
@@ -22,7 +23,7 @@ const rows = computed(() => {
     .filter((flower) => flower.name.toLowerCase().includes(term))
     .map((flower) => ({
       flower,
-      offers: resolveOffers(flower, catalogue.activePrices, DEFAULT_SETTINGS, now).offers,
+      offers: resolveOffers(flower, catalogue.activePrices, thresholds.settings, now).offers,
     }))
 })
 </script>

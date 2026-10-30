@@ -42,6 +42,8 @@ export interface Design {
   group: string
   optional: boolean
   isLeftoverPool?: boolean
+  /** False once retired. Left out means active, as on rows from before retiring existed. */
+  active?: boolean
 }
 
 export type RecipeLine =
@@ -53,7 +55,14 @@ export interface Recipe {
   size: Size
   lines: RecipeLine[]
   version: number
+  /** False once this size is retired. Left out means active. */
+  active?: boolean
+  /** Flowers kept off this recipe's role lines. New events copy them. */
+  excludedFlowerIds?: string[]
 }
+
+/** The backend sets the version when a recipe is saved. */
+export type RecipeDraft = Omit<Recipe, 'version'>
 
 export interface PlanSettings {
   /** Whole-number percent, so 15 means 15%. */
