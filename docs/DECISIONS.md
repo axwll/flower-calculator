@@ -54,3 +54,19 @@ The cap is 5,000 combinations. At 8,000 combinations, a plan with 6 flowers took
 ## 2026-10-30: Fixture values awaiting confirmation
 
 No answers to the Phase 1 brief's seven data questions yet, so `fixtures/` uses the brief's fallbacks, noted in each file. Golden tests prove the engine's arithmetic on those values. They do not confirm the values themselves.
+
+## 2026-10-30: Phase 2 decisions
+
+- **`vue-router` added** with hash URLs, approved by the owner. The phone's back button moves between steps, and Phase 7 needs `#/shared/<id>`.
+- **Seed data starts from the Phase 1 fixtures.** Prices and suppliers are invented, and are stamped at load so they never look stale. Pedestal Medium is the Appendix A recipe. Small and Large are placeholders.
+- **Supplier change is on the review screen,** approved by the owner. "Best price" clears the override, and stale prices show as "old price" in the list.
+- **`EventPlan.gatherNotes` is optional**, so existing fixtures stay valid. The engine ignores it.
+- **Allocation reruns through one Pinia computed**, so screens never work out totals themselves.
+- **No UI library.** Plain CSS with tokens.
+- **The clock is read when allocation reruns**, then passed in as `now`, so the engine stays pure.
+- **Names are looked up in the app.** The engine returns ids, and warnings are worded in `app/wording.ts`.
+- **One card per design, so an event holds one size of each design.** The engine could take two sizes, but section 7 describes one card.
+- **Changing size replaces the event's recipe** with a fresh copy, so edits made to the previous size are lost.
+- **"Start blank" only.** "Duplicate event" comes in Phase 4, when events are saved.
+- **Prices, Library and Settings are placeholders.** Plan settings use the section 5 defaults until Settings is built.
+- **Default size is Medium** where it exists, otherwise the first size.

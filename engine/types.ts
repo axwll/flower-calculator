@@ -85,6 +85,8 @@ export interface EventPlan {
   /** Flower id to supplier id, for user overrides. */
   supplierChoice: Record<string, string>
   settings: PlanSettings
+  /** Flower id to a note for the gather list. Not used by the engine. */
+  gatherNotes?: Record<string, string>
 }
 
 export type NeedsDataReason =

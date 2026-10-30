@@ -11,6 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./app', import.meta.url)),
+      '@engine': fileURLToPath(new URL('./engine/index.ts', import.meta.url)),
     },
   },
 })
