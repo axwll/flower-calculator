@@ -23,6 +23,7 @@ const steps = computed(() => {
   <div v-if="store.current">
     <header class="event-header">
       <h1>{{ store.current.name }}</h1>
+      <p v-if="store.current.purchase"><span class="badge">Purchased</span></p>
       <nav class="steps" aria-label="Steps">
         <RouterLink v-for="step in steps" :key="step.to" :to="step.to">{{ step.label }}</RouterLink>
       </nav>

@@ -18,8 +18,10 @@ const store = useEventStore()
     >
       <strong>{{ event.name }}</strong>
       <span v-if="event.date" class="muted small">{{ event.date }}</span>
+      <span v-if="event.purchase" class="badge">Purchased</span>
     </RouterLink>
     <RouterLink class="button button-primary" to="/events/new">New event</RouterLink>
+    <RouterLink class="button button-quiet" to="/shared">Open a shared link</RouterLink>
   </section>
 </template>
 
@@ -30,5 +32,9 @@ const store = useEventStore()
   flex-direction: column;
   color: var(--ink);
   text-decoration: none;
+}
+
+.event-link .badge {
+  align-self: flex-start;
 }
 </style>

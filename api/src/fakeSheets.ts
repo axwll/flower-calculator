@@ -44,6 +44,7 @@ export function fakeDeps(sheets = fakeSheets(), overrides: Partial<Deps> = {}): 
     appKey: 'app-key',
     adminKey: () => 'admin-key',
     now: () => '2026-06-30T12:00:00.000Z',
+    newId: () => 'share-id',
     withLock: (work) => work(),
     ...overrides,
   }

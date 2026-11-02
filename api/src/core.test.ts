@@ -12,7 +12,16 @@ import type {
   Supplier,
 } from '@engine'
 
-import { TABS, bumpVersion, handlePost, readMaster, respondRead, runSetup } from './core'
+import {
+  MAX_SHARE_CHARS,
+  TABS,
+  bumpVersion,
+  handlePost,
+  readMaster,
+  respondRead,
+  respondShared,
+  runSetup,
+} from './core'
 import { fakeCache, fakeDeps, fakeSheets } from './fakeSheets'
 import { seed } from './seedData'
 
@@ -825,5 +834,91 @@ describe('saveRecipe', () => {
       code: 'invalid',
       message,
     })
+  })
+})
+
+describe('sharePlan', () => {
+  function share(deps: ReturnType<typeof fakeDeps>, payload: unknown, key = 'app-key') {
+    return post(deps, { action: 'sharePlan', key, payload })
+  }
+
+  it('stores the plan and returns its id', () => {
+    const { sheets, deps } = seededDeps({ newId: () => 'long-random-id' })
+
+    expect(share(deps, 'H4sIAAAA_-1')).toEqual({ status: 'ok', id: 'long-random-id' })
+    expect(sheets.readRows('SharedPlans')).toEqual([
+      ['long-random-id', 'H4sIAAAA_-1', '2026-06-30T12:00:00.000Z'],
+    ])
+  })
+
+  it('gives each share its own id', () => {
+    let next = 0
+    const { deps } = seededDeps({ newId: () => `id-${(next += 1)}` })
+
+    expect(share(deps, 'abc').id).not.toBe(share(deps, 'abc').id)
+  })
+
+  it('needs the app key', () => {
+    const { sheets, deps } = seededDeps()
+
+    expect(share(deps, 'abc', 'wrong').code).toBe('bad-key')
+    expect(sheets.readRows('SharedPlans')).toEqual([])
+  })
+
+  it('accepts a plan at the size limit', () => {
+    const { deps } = seededDeps()
+
+    expect(share(deps, 'a'.repeat(MAX_SHARE_CHARS)).status).toBe('ok')
+  })
+
+  it('refuses a plan over the size limit', () => {
+    const { sheets, deps } = seededDeps()
+
+    expect(share(deps, 'a'.repeat(MAX_SHARE_CHARS + 1)).code).toBe('too-large')
+    expect(sheets.readRows('SharedPlans')).toEqual([])
+  })
+
+  it.each([
+    ['nothing', undefined],
+    ['an empty plan', ''],
+    ['a number', 7],
+    ['text a cell could treat as a formula', '=IMPORTXML("x")'],
+  ])('refuses %s', (_label, payload) => {
+    const { sheets, deps } = seededDeps()
+
+    expect(share(deps, payload).code).toBe('invalid')
+    expect(sheets.readRows('SharedPlans')).toEqual([])
+  })
+
+  it('leaves the data version and Changelog alone', () => {
+    const { sheets, deps } = seededDeps()
+    const version = readMaster(sheets).version
+    const logged = sheets.readRows('Changelog').length
+    share(deps, 'abc')
+
+    expect(readMaster(sheets).version).toBe(version)
+    expect(sheets.readRows('Changelog')).toHaveLength(logged)
+  })
+
+  it('keeps shares out of the master data', () => {
+    const { deps } = seededDeps()
+    share(deps, 'secret-payload')
+
+    expect(respondRead(undefined, deps)).not.toContain('secret-payload')
+  })
+})
+
+describe('respondShared', () => {
+  it('hands back a plan by its id', () => {
+    const { deps } = seededDeps({ newId: () => 'share-1' })
+    post(deps, { action: 'sharePlan', key: 'app-key', payload: 'abc' })
+
+    expect(JSON.parse(respondShared('share-1', deps))).toEqual({ status: 'ok', payload: 'abc' })
+  })
+
+  it('says when there is no such plan', () => {
+    const { deps } = seededDeps()
+
+    expect(JSON.parse(respondShared('made-up', deps))).toMatchObject({ code: 'not-found' })
   })
 })

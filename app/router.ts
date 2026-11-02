@@ -13,8 +13,10 @@ import LibraryView from './views/LibraryView.vue'
 import PaletteView from './views/PaletteView.vue'
 import PriceFlowerView from './views/PriceFlowerView.vue'
 import PricesView from './views/PricesView.vue'
+import PurchaseView from './views/PurchaseView.vue'
 import ReviewView from './views/ReviewView.vue'
 import SettingsView from './views/SettingsView.vue'
+import SharedView from './views/SharedView.vue'
 import ShopView from './views/ShopView.vue'
 import SupplierEditView from './views/SupplierEditView.vue'
 import WorkPlanView from './views/WorkPlanView.vue'
@@ -46,6 +48,7 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
           { path: 'palette', name: 'palette', component: PaletteView, meta: { summary: true } },
           { path: 'review', name: 'review', component: ReviewView },
           { path: 'work-plan', name: 'work-plan', component: WorkPlanView },
+          { path: 'purchase', name: 'purchase', component: PurchaseView },
         ],
       },
       { path: '/prices', component: PricesView },
@@ -60,6 +63,7 @@ export function createAppRouter(history: RouterHistory = createWebHashHistory())
         beforeEnter: adminOnly,
       },
       { path: '/settings', component: SettingsView },
+      { path: '/shared/:shareId?', component: SharedView },
       { path: '/:pathMatch(.*)*', redirect: '/events' },
     ],
   })

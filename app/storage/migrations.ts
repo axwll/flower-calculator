@@ -25,8 +25,47 @@ function isDesign(value: unknown): boolean {
   )
 }
 
+function isTime(value: unknown): boolean {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value))
+}
+
+function isFrozenPrice(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  const { flowerId, supplierId, reportId, pricePence, bunchSize, reportedAt } = value
+  return (
+    typeof flowerId === 'string' &&
+    typeof supplierId === 'string' &&
+    typeof reportId === 'string' &&
+    Number.isInteger(pricePence) &&
+    (pricePence as number) >= 0 &&
+    Number.isInteger(bunchSize) &&
+    (bunchSize as number) >= 1 &&
+    isTime(reportedAt)
+  )
+}
+
+function isFrozenList(value: unknown): boolean {
+  return Array.isArray(value) && value.every(isFrozenPrice)
+}
+
+function isPurchase(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  const { purchasedAt, designs, allocation, prices } = value
+  return (
+    isTime(purchasedAt) &&
+    Array.isArray(designs) &&
+    designs.every(isDesign) &&
+    isFrozenList(prices) &&
+    isRecord(allocation) &&
+    Array.isArray(allocation.flowers) &&
+    isRecord(allocation.totals) &&
+    typeof allocation.totals.costPence === 'number'
+  )
+}
+
 function isEvent(raw: RawEvent): boolean {
   const { id, name, designs, palette, supplierChoice, settings } = raw
+  const { purchase, frozenPrices, viewedPrices, sharedFrom } = raw
   return (
     typeof id === 'string' &&
     typeof name === 'string' &&
@@ -35,7 +74,11 @@ function isEvent(raw: RawEvent): boolean {
     isRecord(palette) &&
     ROLES.every((role) => Array.isArray(palette[role])) &&
     isRecord(supplierChoice) &&
-    isRecord(settings)
+    isRecord(settings) &&
+    (purchase === undefined || isPurchase(purchase)) &&
+    (frozenPrices === undefined || isFrozenList(frozenPrices)) &&
+    (viewedPrices === undefined || isRecord(viewedPrices)) &&
+    (sharedFrom === undefined || typeof sharedFrom === 'string')
   )
 }
 

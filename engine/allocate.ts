@@ -6,6 +6,7 @@ import type { FloatingFlower } from './floating'
 import { buildLeftoverPools } from './leftovers'
 import { dealLine } from './placements'
 import { resolveOffers } from './prices'
+import { frozenOffer } from './purchase'
 import type { AllocationResult, DesignAllocation, FlowerAllocation } from './results'
 import {
   buildBudgetCheck,
@@ -44,11 +45,16 @@ export function allocate({
   const { lines, warnings } = expandPlan(plan)
   const equalShares = aggregateStems(lines)
   const catalogue = new Map(flowers.map((flower) => [flower.id, flower]))
+  const frozen = new Map(plan.frozenPrices?.map((price) => [price.flowerId, price]))
 
   const decide = (flowerId: string, stems: number): SupplierDecision => {
     const flower = catalogue.get(flowerId)
     if (!flower) return { ...NO_OFFER, missing: 'unknown-flower' }
     if (flower.soldAs === 'foraged') return NO_OFFER
+
+    const held = frozen.get(flowerId)
+    if (held) return { ...NO_OFFER, offer: frozenOffer(held, now) }
+
     return chooseSupplier(
       flower.soldAs,
       stems,

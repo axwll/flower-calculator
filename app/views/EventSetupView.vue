@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { parsePounds } from '@engine'
@@ -13,8 +13,13 @@ const name = ref('')
 const date = ref('')
 const budget = ref('')
 const copyFrom = ref('')
+const keepFrozen = ref(false)
 const nameError = ref('')
 const budgetError = ref('')
+
+const hasFrozenPrices = computed(() =>
+  Boolean(store.events.find(({ id }) => id === copyFrom.value)?.frozenPrices?.length),
+)
 
 function submit() {
   const trimmedName = name.value.trim()
@@ -30,7 +35,9 @@ function submit() {
     ...(targetBudgetPence !== undefined && { targetBudgetPence }),
   }
   const id = copyFrom.value
-    ? store.duplicateEvent(copyFrom.value, details)
+    ? store.duplicateEvent(copyFrom.value, details, {
+        keepFrozen: hasFrozenPrices.value && keepFrozen.value,
+      })
     : store.createEvent(details)
   if (id) store.open(id)
   void router.push(`/events/${id}/designs`)
@@ -63,6 +70,10 @@ function submit() {
             {{ event.name }}
           </option>
         </select>
+      </label>
+      <label v-if="hasFrozenPrices" class="tick">
+        <input v-model="keepFrozen" name="keep-frozen" type="checkbox" />
+        <span>Keep frozen prices</span>
       </label>
       <button class="button button-primary" type="submit">
         {{ copyFrom ? 'Duplicate event' : 'Start blank' }}

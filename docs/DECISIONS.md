@@ -133,3 +133,28 @@ The owner approved the brief and its four recommendations.
 - **Rules from the brief:** there's no `Changelog` screen, the role list stays in code, a new size starts from a copy of the one showing, new designs appear at the end of their group, and when two admins edit at once the later save wins.
 - **`FlowerForm` wasn't needed as a separate component.** The form lives in `FlowerEditView`.
 - **Tests were written before the code, but weren't run red first.** Each batch of tests and its code went in together, so the tests haven't been seen failing.
+
+## 2026-10-30: Phase 7 decisions
+
+The owner asked for this phase to start without approving the brief first, so these haven't been reviewed yet.
+
+- **A purchase can't be undone.** The plan makes the snapshot immutable, so the confirmation screen does the protecting. Duplicating the event gives a clean copy.
+- **`EventPlan` gained `frozenPrices` beside `purchase`.** Allocation reads the list, so "keep frozen prices" on a duplicate works on an event that isn't purchased. The snapshot keeps its own copy, which nothing edits.
+- **A frozen flower keeps its frozen price for any extra bunches.** That follows the plan's "stays editable with frozen prices". Only flowers with no frozen price use live prices.
+- **Frozen prices ignore supplier overrides** and are never flagged as stale.
+- **A flower with no price at purchase counts as added** once it gets one, because it wasn't bought at a known price.
+- **"Spent at purchase" never goes down.** Bought bunches stay bought, so Review shows the snapshot's total plus what edits add, not a reworked total.
+- **"Price changed since viewed" is a notice on Review.** The event stores the prices last seen, and "Got it" clears the notice. A supplier picked by hand doesn't count, and neither does a move caused by changing stems.
+- **The notice waits for saved prices,** so the seed's invented prices are never recorded as seen. Only the very first offline run can record them.
+- **Backup nudges only follow a purchase,** as section 8 asks. It's a link to Settings, shown once.
+- **The event schema stays at version 1.** The new fields are optional, as `gatherNotes` was. `migrateEvent` checks them on load, restore and share.
+- **A shared plan is previewed first,** so opening a link can't quietly add anything.
+- **Shared plans keep their purchase and frozen prices,** and get a new id and `sharedFrom`. Opening the same link again offers your copy or another.
+- **The Events tab gained "Open a shared link".** iPhone links open in Safari, whose storage is separate from the installed app, so the plan wouldn't otherwise reach the app. This wasn't in the plan.
+- **A share holds the whole event,** including its name, date and budget, as the plan says. The share screen warns about this. It replaces Phase 5's "no client data goes in the Sheet". Shares can't be listed, and each id is a random UUID.
+- **The backend makes the id with `Utilities.getUuid()`.** It needs no new permission, so `setup` doesn't need running again.
+- **A share doesn't bump the data version or write to `Changelog`,** because master data hasn't changed.
+- **Sharing is capped at 50,000 characters compressed and 2 MB unpacked.** The second limit protects the phone opening it.
+- **`ApiClient` gained `sharePlan` and `fetchShared`.** `offlineClient` is now exported, so test clients inherit them.
+- **Printouts are unchanged.** They show what to make, not what was bought.
+- **Tests were written and run failing first** for each batch, unlike Phase 6.

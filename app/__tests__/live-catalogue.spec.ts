@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MasterData } from '@engine'
 
-import { setApiClient } from '../api/client'
+import { offlineClient, setApiClient } from '../api/client'
 import type { ApiClient, MasterReply } from '../api/client'
 import { seed } from '../seed/seed'
 import { memoryPriceStorage, setPriceStorage } from '../storage/priceStorage'
@@ -25,6 +25,7 @@ function master(overrides: Partial<MasterData> = {}): MasterData {
 
 function fakeClient(result: MasterReply): ApiClient & { fetchMaster: ReturnType<typeof vi.fn> } {
   return {
+    ...offlineClient,
     fetchMaster: vi.fn<ApiClient['fetchMaster']>().mockResolvedValue(result),
     send: async () => ({ status: 'sent' }),
   }

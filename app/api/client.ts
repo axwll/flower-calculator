@@ -22,9 +22,17 @@ export type ApiAction =
   | { action: 'checkAdmin'; adminKey: string }
   | (AdminEdit & { adminKey: string; nickname: string })
 
+export type ShareReply =
+  { status: 'shared'; id: string } | { status: 'refused'; message: string } | { status: 'failed' }
+
+export type SharedReply =
+  { status: 'ok'; payload: string } | { status: 'not-found' } | { status: 'failed' }
+
 export interface ApiClient {
   fetchMaster(since?: number): Promise<MasterReply>
   send(action: ApiAction): Promise<SendResult>
+  sharePlan(payload: string): Promise<ShareReply>
+  fetchShared(id: string): Promise<SharedReply>
 }
 
 const TIMEOUT_MS = 20_000
@@ -50,6 +58,16 @@ function isMaster(value: unknown): value is MasterData {
 }
 
 export function httpClient(url: string, key: string): ApiClient {
+  function post(action: Record<string, unknown>) {
+    return fetch(url, {
+      method: 'POST',
+      // Plain text avoids a CORS preflight, which Apps Script can't answer.
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ ...action, key }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    }).then(readJson)
+  }
+
   return {
     async fetchMaster(since) {
       try {
@@ -68,15 +86,7 @@ export function httpClient(url: string, key: string): ApiClient {
 
     async send(action) {
       try {
-        const reply = await readJson(
-          await fetch(url, {
-            method: 'POST',
-            // Plain text avoids a CORS preflight, which Apps Script can't answer.
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ ...action, key }),
-            signal: AbortSignal.timeout(TIMEOUT_MS),
-          }),
-        )
+        const reply = await post(action)
         if (reply?.status === 'ok') return { status: 'sent' }
         if (reply?.status !== 'error' || reply.code === 'busy') return { status: 'retry' }
         if (reply.code === 'not-admin') {
@@ -87,12 +97,44 @@ export function httpClient(url: string, key: string): ApiClient {
         return { status: 'retry' }
       }
     },
+
+    async sharePlan(payload) {
+      try {
+        const reply = await post({ action: 'sharePlan', payload })
+        if (reply?.status === 'ok' && typeof reply.id === 'string') {
+          return { status: 'shared', id: reply.id }
+        }
+        return reply?.status === 'error' && reply.code !== 'busy'
+          ? { status: 'refused', message: String(reply.message) }
+          : { status: 'failed' }
+      } catch {
+        return { status: 'failed' }
+      }
+    },
+
+    async fetchShared(id) {
+      try {
+        const reply = await readJson(
+          await fetch(`${url}?shared=${encodeURIComponent(id)}`, {
+            signal: AbortSignal.timeout(TIMEOUT_MS),
+          }),
+        )
+        if (reply?.code === 'not-found') return { status: 'not-found' }
+        return reply?.status === 'ok' && typeof reply.payload === 'string'
+          ? { status: 'ok', payload: reply.payload }
+          : { status: 'failed' }
+      } catch {
+        return { status: 'failed' }
+      }
+    },
   }
 }
 
-const offlineClient: ApiClient = {
+export const offlineClient: ApiClient = {
   fetchMaster: async () => ({ status: 'failed' }),
   send: async () => ({ status: 'retry' }),
+  sharePlan: async () => ({ status: 'failed' }),
+  fetchShared: async () => ({ status: 'failed' }),
 }
 
 let active: ApiClient | null = null

@@ -40,6 +40,10 @@ declare const PropertiesService: {
   getScriptProperties(): { getProperty(key: string): string | null }
 }
 
+declare const Utilities: {
+  getUuid(): string
+}
+
 declare const ContentService: {
   MimeType: { JSON: unknown }
   createTextOutput(text: string): { setMimeType(type: unknown): GoogleTextOutput }

@@ -1,4 +1,4 @@
-import { bumpVersion, handlePost, respondRead, runSetup } from './core'
+import { bumpVersion, handlePost, respondRead, respondShared, runSetup } from './core'
 import type { Deps } from './core'
 import { APP_KEY, seed } from './seedData'
 import { googleSheets } from './sheet'
@@ -27,6 +27,7 @@ function deps(): Deps {
     appKey: APP_KEY,
     adminKey: () => PropertiesService.getScriptProperties().getProperty('ADMIN_KEY'),
     now: () => new Date().toISOString(),
+    newId: () => Utilities.getUuid(),
     withLock,
   }
 }
@@ -35,8 +36,9 @@ function json(text: string): GoogleTextOutput {
   return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON)
 }
 
-export function doGet(event: { parameter: { since?: string } }): GoogleTextOutput {
-  const { since } = event.parameter
+export function doGet(event: { parameter: { since?: string; shared?: string } }): GoogleTextOutput {
+  const { since, shared } = event.parameter
+  if (shared) return json(respondShared(shared, deps()))
   return json(respondRead(since ? Number(since) : undefined, deps()))
 }
 

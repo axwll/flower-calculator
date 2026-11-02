@@ -1,9 +1,22 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
-import { allocate, chooseSupplier, combineDesignFlowers, expandPlan, resolveOffers } from '@engine'
+import {
+  allocate,
+  buildPurchase,
+  chooseSupplier,
+  combineDesignFlowers,
+  designChange,
+  expandPlan,
+  frozenOffer,
+  priceChanges as changedPrices,
+  purchaseChanges as changesSincePurchase,
+  refreshViewed,
+  resolveOffers,
+} from '@engine'
 import type {
   AllocationResult,
+  DesignChange,
   EventPlan,
   ExpandedLine,
   Flower,
@@ -11,6 +24,8 @@ import type {
   Offer,
   OfferResolution,
   PlanDesign,
+  PriceChange,
+  PurchaseChange,
   Recipe,
   RecipeDraft,
   Role,
@@ -38,14 +53,18 @@ export interface NewEvent {
   targetBudgetPence?: number
 }
 
+export interface DuplicateOptions {
+  keepFrozen?: boolean
+}
+
 /** The event keeps its leave-out list on the design, so only the lines come across. */
 function recipeCopy({ designId, size, lines, version }: Recipe): Recipe {
   return { designId, size, lines: lines.map((line) => ({ ...line })), version }
 }
 
 /** Vue's proxies can't go into IndexedDB, and copies must share nothing with the original. */
-function toPlain(event: EventPlan): EventPlan {
-  return JSON.parse(JSON.stringify(event)) as EventPlan
+function toPlain<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 /** Random, because ids must stay unique across launches now that events are saved. */
@@ -169,13 +188,33 @@ export const useEventStore = defineStore('event', () => {
     return id
   }
 
-  /** Copies recipes, palette and quantities. The name, date and budget are the new event's. */
-  function duplicateEvent(sourceId: string, details: NewEvent): string | null {
+  /**
+   * Copies recipes, palette and quantities. The name, date and budget are the new event's.
+   * A copy is never purchased, and goes back to live prices unless told to keep frozen ones.
+   */
+  function duplicateEvent(
+    sourceId: string,
+    details: NewEvent,
+    { keepFrozen = false }: DuplicateOptions = {},
+  ): string | null {
     const source = events.value.find((event) => event.id === sourceId)
     if (!source) return null
 
-    const { date: _date, targetBudgetPence: _budget, ...kept } = toPlain(source)
-    const event: EventPlan = { ...kept, ...details, id: newEventId() }
+    const {
+      date: _date,
+      targetBudgetPence: _budget,
+      purchase: _purchase,
+      frozenPrices,
+      viewedPrices: _viewed,
+      sharedFrom: _shared,
+      ...kept
+    } = toPlain(source)
+    const event: EventPlan = {
+      ...kept,
+      ...details,
+      id: newEventId(),
+      ...(keepFrozen && frozenPrices ? { frozenPrices } : {}),
+    }
     events.value.push(event)
     save(event)
     return event.id
@@ -193,6 +232,63 @@ export const useEventStore = defineStore('event', () => {
       else events.value[index] = event
       save(event)
     }
+  }
+
+  /** A copy, so the plan's frozen prices and purchase come too, but no tie to the original. */
+  function addShared(plan: EventPlan, shareId: string): string {
+    const event: EventPlan = { ...toPlain(plan), id: newEventId(), sharedFrom: shareId }
+    events.value.push(event)
+    save(event)
+    return event.id
+  }
+
+  /** Only ever happens once, because the snapshot is immutable. */
+  function markPurchased(): boolean {
+    const event = current.value
+    const result = allocation.value
+    if (!event || !result || event.purchase || result.totals.stems === 0) return false
+
+    const purchase = buildPurchase(event, result, new Date().toISOString())
+    const fresh = new Set(purchase.prices.map(({ flowerId }) => flowerId))
+    const kept = event.frozenPrices?.filter(({ flowerId }) => !fresh.has(flowerId)) ?? []
+    event.purchase = purchase
+    event.frozenPrices = [...kept, ...toPlain(purchase.prices)]
+    return true
+  }
+
+  const purchaseChanges = computed<PurchaseChange[]>(() => {
+    const purchase = current.value?.purchase
+    return purchase && allocation.value ? changesSincePurchase(purchase, allocation.value) : []
+  })
+
+  const addedCostPence = computed(() =>
+    purchaseChanges.value.reduce((sum, change) => sum + change.addedCostPence, 0),
+  )
+
+  function designChangeFor(designIndex: number): DesignChange | null {
+    const event = current.value
+    const design = event?.designs[designIndex]
+    return event?.purchase && design ? designChange(event.purchase, design) : null
+  }
+
+  /** Waits for saved prices, so the seed's invented ones never count as what was seen. */
+  const priceChanges = computed<PriceChange[]>(() => {
+    if (!catalogue.pricesLoaded || !allocation.value) return []
+    return changedPrices(current.value?.viewedPrices ?? {}, allocation.value)
+  })
+
+  function notePricesViewed() {
+    const event = current.value
+    if (!event || !allocation.value || !catalogue.pricesLoaded) return
+    const viewed = refreshViewed(event.viewedPrices ?? {}, allocation.value)
+    if (JSON.stringify(viewed) !== JSON.stringify(event.viewedPrices ?? {})) {
+      event.viewedPrices = viewed
+    }
+  }
+
+  function acknowledgePrices() {
+    const event = current.value
+    if (event && allocation.value) event.viewedPrices = refreshViewed({}, allocation.value)
   }
 
   function open(id: string): boolean {
@@ -288,6 +384,9 @@ export const useEventStore = defineStore('event', () => {
     const allocated = allocation.value?.flowers.find((item) => item.flowerId === flowerId)
     if (allocated?.offer) return allocated.offer
 
+    const held = current.value?.frozenPrices?.find((price) => price.flowerId === flowerId)
+    if (held) return frozenOffer(held, new Date().toISOString())
+
     const flower = catalogue.flowers.find((item) => item.id === flowerId)
     const resolution = flower && flower.soldAs !== 'foraged' ? resolutionFor(flower) : null
     return flower && resolution ? chooseSupplier(flower.soldAs, 1, resolution).offer : null
@@ -305,6 +404,8 @@ export const useEventStore = defineStore('event', () => {
     if (!choices) return
     if (supplierId) choices[flowerId] = supplierId
     else delete choices[flowerId]
+    // Their own choice isn't a price change, so the notice starts over for this flower.
+    delete current.value?.viewedPrices?.[flowerId]
   }
 
   function setGatherNote(flowerId: string, note: string) {
@@ -323,6 +424,14 @@ export const useEventStore = defineStore('event', () => {
     duplicateEvent,
     countExisting,
     importEvents,
+    addShared,
+    markPurchased,
+    purchaseChanges,
+    addedCostPence,
+    designChangeFor,
+    priceChanges,
+    notePricesViewed,
+    acknowledgePrices,
     allocation,
     workPlan,
     lines,

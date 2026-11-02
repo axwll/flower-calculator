@@ -14,6 +14,7 @@ const catalogue = useCatalogueStore()
 const store = useEventStore()
 
 const recipeOpen = ref(false)
+const change = computed(() => store.designChangeFor(props.designIndex))
 /** An event keeps a size retired after it was chosen. */
 const sizes = computed(() => {
   const inUse = catalogue.sizesFor(props.design.id)
@@ -38,6 +39,9 @@ function onEnabled(event: Event) {
         <span>Include</span>
       </label>
     </div>
+    <span v-if="change" class="badge badge-warn">
+      {{ change === 'added' ? 'Added after purchase' : 'Changed after purchase' }}
+    </span>
 
     <template v-if="entry.enabled">
       <p v-if="design.isLeftoverPool" class="muted small">

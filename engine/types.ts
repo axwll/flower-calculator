@@ -1,3 +1,5 @@
+import type { AllocationResult } from './results'
+
 export type Role = 'focal' | 'secondary' | 'filler' | 'foliage' | 'accent'
 export type SoldAs = 'bunch' | 'stem' | 'foraged'
 export type Size = 'Small' | 'Medium' | 'Large' | 'Fixed'
@@ -96,6 +98,40 @@ export interface EventPlan {
   settings: PlanSettings
   /** Flower id to a note for the gather list. Not used by the engine. */
   gatherNotes?: Record<string, string>
+  /** Immutable once set. Edits go to the event, never to this. */
+  purchase?: PurchaseSnapshot
+  /** Prices that override live ones, from a purchase or kept on a duplicate. */
+  frozenPrices?: FrozenPrice[]
+  /** Flower id to the price last seen on the review screen. */
+  viewedPrices?: Record<string, ViewedPrice>
+  /** The share this event was copied from. */
+  sharedFrom?: string
+}
+
+/** A price as it stood when it was frozen, with the report it came from. */
+export interface FrozenPrice {
+  flowerId: string
+  supplierId: string
+  reportId: string
+  pricePence: number
+  bunchSize: number
+  reportedAt: string
+}
+
+export interface PurchaseSnapshot {
+  purchasedAt: string
+  designs: PlanDesign[]
+  palette: Record<Role, string[]>
+  settings: PlanSettings
+  allocation: AllocationResult
+  prices: FrozenPrice[]
+}
+
+export interface ViewedPrice {
+  supplierId: string
+  pricePence: number
+  bunchSize: number
+  stems: number
 }
 
 /** The shared data the backend serves. */

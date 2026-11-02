@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Design, MasterData, Recipe } from '@engine'
 
-import { setApiClient } from '../api/client'
+import { offlineClient, setApiClient } from '../api/client'
 import type { ApiAction, ApiClient, SendResult } from '../api/client'
 import { seed } from '../seed/seed'
 import { useCatalogueStore } from '../stores/catalogue'
@@ -18,6 +18,7 @@ let reply: SendResult
 
 function client(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
+    ...offlineClient,
     fetchMaster: async () => ({ status: 'unchanged' }),
     send: async (action) => {
       sent.push(action)

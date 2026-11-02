@@ -2,7 +2,7 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setApiClient } from '../api/client'
+import { offlineClient, setApiClient } from '../api/client'
 import type { ApiAction } from '../api/client'
 import { useCatalogueStore } from '../stores/catalogue'
 import { usePricesStore } from '../stores/prices'
@@ -37,6 +37,7 @@ beforeEach(() => {
   localStorage.clear()
   sent = []
   setApiClient({
+    ...offlineClient,
     fetchMaster: async () => ({ status: 'unchanged' }),
     send: async (action) => {
       sent.push(action)
@@ -106,6 +107,7 @@ describe('prices tab', () => {
 
   it('says when prices may be out of date', async () => {
     setApiClient({
+      ...offlineClient,
       fetchMaster: async () => ({ status: 'failed' }),
       send: async () => ({ status: 'retry' }),
     })
@@ -116,6 +118,7 @@ describe('prices tab', () => {
 
   it('counts updates waiting to send', async () => {
     setApiClient({
+      ...offlineClient,
       fetchMaster: async () => ({ status: 'failed' }),
       send: async () => ({ status: 'retry' }),
     })
@@ -362,6 +365,7 @@ describe('voiding from a flower page', () => {
 
   it('marks a report still waiting to send', async () => {
     setApiClient({
+      ...offlineClient,
       fetchMaster: async () => ({ status: 'failed' }),
       send: async () => ({ status: 'retry' }),
     })

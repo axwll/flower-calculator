@@ -27,6 +27,8 @@ export const useCatalogueStore = defineStore('catalogue', () => {
 
   const source = ref<CatalogueSource>('seed')
   const version = ref<number | undefined>(undefined)
+  /** True once any saved prices are in, so the seed's invented ones have been replaced. */
+  const pricesLoaded = ref(false)
 
   const activeFlowers = computed(() => flowers.value.filter((flower) => flower.active))
 
@@ -98,6 +100,7 @@ export const useCatalogueStore = defineStore('catalogue', () => {
 
   async function start() {
     await loadCached()
+    pricesLoaded.value = true
     await refresh()
   }
 
@@ -158,6 +161,7 @@ export const useCatalogueStore = defineStore('catalogue', () => {
     activePrices,
     source,
     version,
+    pricesLoaded,
     start,
     refresh,
     recordSent,

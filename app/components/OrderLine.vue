@@ -21,6 +21,12 @@ const thin = computed(() =>
   ),
 )
 
+const addedLater = computed(() =>
+  store.purchaseChanges.some(
+    ({ flowerId, kind }) => flowerId === props.flower.flowerId && kind !== 'fewer',
+  ),
+)
+
 const buying = computed(() => {
   const { soldAs, bunches, offer } = props.flower
   return soldAs === 'bunch' && offer ? `${bunches} × ${offer.bunchSize}` : 'Sold by the stem'
@@ -41,7 +47,9 @@ function onSupplier(event: Event) {
       {{ plural(flower.stems, 'stem') }} · {{ buying }} · {{ flower.spare }} spare
     </p>
     <span v-if="thin" class="badge badge-warn">Thin bunch</span>
-    <label v-if="offers.length > 1" class="supplier">
+    <span v-if="addedLater" class="badge badge-warn">Added after purchase</span>
+    <span v-if="flower.offer?.frozen" class="badge">Frozen price</span>
+    <label v-else-if="offers.length > 1" class="supplier">
       <span class="visually-hidden">
         Supplier for {{ catalogue.flowerName(flower.flowerId) }}
       </span>

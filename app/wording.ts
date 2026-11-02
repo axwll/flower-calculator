@@ -1,4 +1,13 @@
-import type { ExpandedLine, LineFlower, NeedsDataReason, Role, Warning } from '@engine'
+import { formatPence } from '@engine'
+import type {
+  ExpandedLine,
+  LineFlower,
+  NeedsDataReason,
+  PriceChange,
+  PurchaseChange,
+  Role,
+  Warning,
+} from '@engine'
 
 export const ROLES: Role[] = ['focal', 'secondary', 'filler', 'foliage', 'accent']
 
@@ -58,6 +67,37 @@ export function warningText(warning: Warning, names: Names): string {
     case 'supplier-changed':
       return `${names.flowerName(warning.flowerId)}: moved to ${names.supplierName(warning.toSupplierId)}, which is cheaper once every stem is counted.`
   }
+}
+
+const DAY_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' })
+
+export function dayText(time: string): string {
+  return DAY_FORMAT.format(new Date(time))
+}
+
+function changeUnits({ soldAs, before, after }: PurchaseChange, count: number): string {
+  // A bunch-sold flower with no price yet is only counted in stems.
+  const noun = soldAs === 'bunch' && (before > 0 || after > 0) ? 'bunch' : 'stem'
+  return noun === 'bunch' ? `${count} bunch${count === 1 ? '' : 'es'}` : plural(count, 'stem')
+}
+
+export function purchaseChangeText(change: PurchaseChange, names: Names): string {
+  const name = names.flowerName(change.flowerId)
+  const difference = Math.abs(change.after - change.before)
+  switch (change.kind) {
+    case 'added':
+      return `${name}: ${changeUnits(change, change.after)} added after purchase.`
+    case 'more':
+      return `${name}: ${changeUnits(change, difference)} more needed after purchase.`
+    case 'fewer':
+      return `${name}: ${changeUnits(change, difference)} fewer needed after purchase.`
+  }
+}
+
+export function priceChangeText({ flowerId, from, to }: PriceChange, names: Names): string {
+  const place = from.supplierId === to.supplierId ? '' : ` at ${names.supplierName(to.supplierId)}`
+  const bunch = from.bunchSize === to.bunchSize ? '' : `, now ${to.bunchSize} stems a bunch`
+  return `${names.flowerName(flowerId)}: was ${formatPence(from.pricePence)}, now ${formatPence(to.pricePence)}${place}${bunch}.`
 }
 
 export function placementText({

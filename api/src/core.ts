@@ -73,12 +73,16 @@ export interface Deps {
   appKey: string
   adminKey: () => string | null
   now: () => string
+  /** Long and random, because anyone holding a share's id can read it. */
+  newId: () => string
   withLock: <T>(work: () => T) => T
 }
 
 export type SeedData = Omit<MasterData, 'version'>
 
 const VERSION_KEY = 'dataVersion'
+/** Just under what a Sheet cell can hold. */
+export const MAX_SHARE_CHARS = 50_000
 const MAX_NOTE_LENGTH = 500
 const MAX_NICKNAME_LENGTH = 40
 const MAX_NAME_LENGTH = 80
@@ -348,6 +352,16 @@ function refuse(code: string, message: string): Reply {
   return { status: 'error', code, message }
 }
 
+/** Shares stay out of the master data, so one can only be read by someone with its id. */
+export function respondShared(id: string, deps: Deps): string {
+  const row = deps.sheets.readRows('SharedPlans').find(([shareId]) => shareId === id)
+  return JSON.stringify(
+    row
+      ? { status: 'ok', payload: row[1] }
+      : refuse('not-found', 'That shared plan could not be found.'),
+  )
+}
+
 function isText(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== ''
 }
@@ -593,12 +607,25 @@ function routeAdmin(request: Record<string, unknown>, deps: Deps): Reply {
     : saveRecipe(request, nickname, deps)
 }
 
+/** Master data hasn't changed, so the version stays and phones keep their caches. */
+function sharePlan({ payload }: Record<string, unknown>, deps: Deps): Reply {
+  if (typeof payload !== 'string' || !/^[\w-]+$/.test(payload)) {
+    return refuse('invalid', 'That plan could not be read.')
+  }
+  if (payload.length > MAX_SHARE_CHARS) return refuse('too-large', 'This plan is too big to share.')
+
+  const id = deps.newId()
+  deps.sheets.appendRows('SharedPlans', [[id, payload, deps.now()]])
+  return { status: 'ok', id }
+}
+
 const ADMIN_ACTIONS = ['checkAdmin', 'saveFlower', 'saveSupplier', 'saveDesign', 'saveRecipe']
 
 function route(request: Record<string, unknown>, deps: Deps): Reply {
   if (request.key !== deps.appKey) return refuse('bad-key', 'This app is out of date.')
   if (request.action === 'reportPrice') return reportPrice(request, deps)
   if (request.action === 'voidPrice') return voidPrice(request, deps)
+  if (request.action === 'sharePlan') return sharePlan(request, deps)
   if (ADMIN_ACTIONS.includes(String(request.action))) return routeAdmin(request, deps)
   return refuse('invalid', 'Unknown action.')
 }

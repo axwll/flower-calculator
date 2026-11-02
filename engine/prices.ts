@@ -1,6 +1,6 @@
 import type { Flower, PlanSettings, PriceReport } from './types'
 
-const DAY_MS = 86_400_000
+export const DAY_MS = 86_400_000
 
 export type Freshness = 'fresh' | 'amber' | 'red'
 
@@ -14,6 +14,8 @@ export interface Offer {
   reportedAt: string
   ageDays: number
   freshness: Freshness
+  /** Set when this comes from a frozen price rather than a live report. */
+  frozen?: true
 }
 
 export interface OfferResolution {

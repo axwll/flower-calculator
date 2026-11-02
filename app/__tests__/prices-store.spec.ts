@@ -2,7 +2,7 @@ import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setApiClient } from '../api/client'
+import { offlineClient, setApiClient } from '../api/client'
 import type { ApiAction, ApiClient, SendResult } from '../api/client'
 import { isBigChange } from '../pricing'
 import { memoryPriceStorage, setPriceStorage } from '../storage/priceStorage'
@@ -22,6 +22,7 @@ function fakeClient(result: SendResult = { status: 'sent' }) {
   const client: ApiClient & { sent: ApiAction[]; result: SendResult } = {
     sent,
     result,
+    ...offlineClient,
     fetchMaster: async () => ({ status: 'unchanged' }),
     send: async (action) => {
       sent.push(action)

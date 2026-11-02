@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { formatPence } from '@engine'
 
@@ -7,6 +7,9 @@ import GatherList from '../components/GatherList.vue'
 import LeftoversList from '../components/LeftoversList.vue'
 import NeedsDataBadge from '../components/NeedsDataBadge.vue'
 import OrderLine from '../components/OrderLine.vue'
+import PriceChanges from '../components/PriceChanges.vue'
+import PurchaseSummary from '../components/PurchaseSummary.vue'
+import SharePlan from '../components/SharePlan.vue'
 import WarningList from '../components/WarningList.vue'
 import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
@@ -20,10 +23,18 @@ const totals = computed(() => store.allocation?.totals)
 const notCosted = computed(
   () => store.allocation?.flowers.filter((item) => item.needsData && item.stems > 0) ?? [],
 )
+
+watch(
+  () => [store.allocation, catalogue.pricesLoaded],
+  () => store.notePricesViewed(),
+  { immediate: true },
+)
 </script>
 
 <template>
   <section class="page">
+    <PriceChanges />
+    <PurchaseSummary />
     <h2>Order list</h2>
     <p v-if="orders.length === 0" class="muted">Nothing to order yet.</p>
     <div
@@ -59,6 +70,15 @@ const notCosted = computed(
     <GatherList />
     <LeftoversList />
     <WarningList />
+
+    <RouterLink
+      v-if="store.current && !store.current.purchase"
+      class="button button-primary mark-purchased"
+      :to="`/events/${store.current.id}/purchase`"
+    >
+      Mark as purchased
+    </RouterLink>
+    <SharePlan />
   </section>
 </template>
 
@@ -69,5 +89,9 @@ const notCosted = computed(
 
 [data-supplier] > .row {
   padding-bottom: 8px;
+}
+
+.mark-purchased {
+  margin-top: 16px;
 }
 </style>
