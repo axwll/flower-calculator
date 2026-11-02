@@ -98,10 +98,8 @@ export function dayText(time: string): string {
   return DAY_FORMAT.format(new Date(time))
 }
 
-function changeUnits({ soldAs, before, after }: PurchaseChange, count: number): string {
-  // A bunch-sold flower with no price yet is only counted in stems.
-  const noun = soldAs === 'bunch' && (before > 0 || after > 0) ? 'bunch' : 'stem'
-  return noun === 'bunch' ? `${count} bunch${count === 1 ? '' : 'es'}` : plural(count, 'stem')
+function changeUnits({ unit }: PurchaseChange, count: number): string {
+  return unit === 'bunch' ? `${count} bunch${count === 1 ? '' : 'es'}` : plural(count, 'stem')
 }
 
 export function purchaseChangeText(change: PurchaseChange, names: Names): string {

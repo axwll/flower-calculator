@@ -293,6 +293,28 @@ describe('voiding', () => {
     expect(currentPrice()).toBe(before)
   })
 
+  it('still voids a price that is on its way to the Sheet', async () => {
+    const before = (await open(), currentPrice())
+    const prices = await open()
+    prices.setNickname('Sam')
+    const send = client.send
+    let release = () => {}
+    client.send = async (action) => {
+      if (action.action === 'reportPrice') await new Promise<void>((done) => (release = done))
+      return send(action)
+    }
+
+    void prices.report(FORM)
+    await flushPromises()
+    await prices.voidReport(prices.queue[0]?.id ?? '')
+    release()
+    await flushPromises()
+
+    expect(client.sent.map(({ action }) => action)).toEqual(['reportPrice', 'voidPrice'])
+    expect(prices.queue).toEqual([])
+    expect(currentPrice()).toBe(before)
+  })
+
   it('sends the admin key when one is set', async () => {
     const prices = await reportOnline()
     prices.setAdminKey('secret')

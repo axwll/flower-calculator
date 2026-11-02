@@ -415,8 +415,22 @@ describe('Save as PDF feedback', () => {
     await wrapper.find('button.save-pdf').trigger('click')
     await vi.advanceTimersByTimeAsync(5000)
 
-    expect(wrapper.find('[data-print-help]').text()).toContain('Safari')
+    expect(wrapper.find('[data-print-help]').text()).toContain('press Save as PDF again')
+    expect(wrapper.find('[data-print-help]').text()).not.toContain('installed app')
     expect(wrapper.find('button.save-pdf').text()).toBe('Save as PDF')
+  })
+
+  it('takes the help away if the print screen opens late', async () => {
+    vi.spyOn(window, 'print').mockImplementation(() => undefined)
+    const { wrapper } = await workPlan()
+    vi.useFakeTimers()
+
+    await wrapper.find('button.save-pdf').trigger('click')
+    await vi.advanceTimersByTimeAsync(5000)
+    window.dispatchEvent(new Event('beforeprint'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(wrapper.find('[data-print-help]').exists()).toBe(false)
   })
 
   it('explains the same when printing throws', async () => {

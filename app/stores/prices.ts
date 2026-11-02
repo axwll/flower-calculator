@@ -44,6 +44,7 @@ export const usePricesStore = defineStore('prices', () => {
   const queue = ref<QueuedAction[]>([])
   const refused = ref<RefusedAction[]>([])
   let flushing = false
+  let sendingId: string | undefined
 
   function setNickname(value: string) {
     nickname.value = value.trim()
@@ -91,7 +92,9 @@ export const usePricesStore = defineStore('prices', () => {
 
     let queued = queue.value[0]
     while (queued) {
+      sendingId = queued.id
       const result = await apiClient().send(toApiAction(queued))
+      sendingId = undefined
       if (result.status === 'retry') break
 
       if (result.status === 'sent') {
@@ -126,7 +129,8 @@ export const usePricesStore = defineStore('prices', () => {
 
   async function voidReport(reportId: string) {
     const unsent = queue.value.find((item) => item.kind === 'report' && item.id === reportId)
-    if (unsent) {
+    // A report already being sent can't be called back, so its void follows it instead.
+    if (unsent && unsent.id !== sendingId) {
       await dequeue(unsent)
       return
     }

@@ -8,7 +8,10 @@ export interface DeviceInfo {
   canPrompt: boolean
 }
 
-function isIos({ userAgent, maxTouchPoints }: DeviceInfo): boolean {
+export function isIos({
+  userAgent,
+  maxTouchPoints,
+}: Pick<DeviceInfo, 'userAgent' | 'maxTouchPoints'>): boolean {
   // iPads report themselves as Macs, so touch is what gives them away.
   return /iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1)
 }

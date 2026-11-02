@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { daysUntilText, groupPounds, placementText } from '../wording'
+import { daysUntilText, groupPounds, placementText, purchaseChangeText } from '../wording'
 
 function flower(perPlacement: number[], ranges: { from: number; to: number; stems: number }[]) {
   return { perPlacement, ranges }
@@ -103,5 +103,28 @@ describe('daysUntilText', () => {
     ['2027-11-02', 'in 365 days'],
   ])('%s is %s', (date, expected) => {
     expect(daysUntilText(date, now)).toBe(expected)
+  })
+})
+
+describe('purchaseChangeText', () => {
+  const names = { flowerName: () => 'Rose', designName: () => '', supplierName: () => '' }
+  const change = {
+    flowerId: 'rose',
+    kind: 'added',
+    before: 0,
+    after: 2,
+    addedCostPence: 0,
+  } as const
+
+  it('counts in bunches when bought by the bunch', () => {
+    expect(purchaseChangeText({ ...change, unit: 'bunch' }, names)).toBe(
+      'Rose: 2 bunches added after purchase.',
+    )
+  })
+
+  it('counts in stems otherwise', () => {
+    expect(purchaseChangeText({ ...change, unit: 'stem' }, names)).toBe(
+      'Rose: 2 stems added after purchase.',
+    )
   })
 })

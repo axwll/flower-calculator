@@ -91,6 +91,24 @@ describe('add another size', () => {
     expect(wrapper.find('[data-design="pedestal"] .add-size').exists()).toBe(false)
   })
 
+  it('still shows each card its size once every size is on the event', async () => {
+    const { wrapper } = await twoSizes()
+    await cards(wrapper)[0]?.find('.add-size').trigger('click')
+    await flushPromises()
+
+    const shown = cards(wrapper).map(
+      (card) => card.find<HTMLSelectElement>('select[name="size"]').element.value,
+    )
+
+    expect([...shown].sort()).toEqual(['Large', 'Medium', 'Small'])
+  })
+
+  it('offers no size box for a design with only one size', async () => {
+    const { wrapper } = await mountEvent()
+
+    expect(wrapper.find('[data-design="groom"] select[name="size"]').exists()).toBe(false)
+  })
+
   it('is not offered for a design with one size', async () => {
     const { wrapper } = await mountEvent()
 

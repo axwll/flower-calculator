@@ -1,25 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { LeftoverPool } from '@engine'
 
+import { poolContent } from '../print/content'
 import { useCatalogueStore } from '../stores/catalogue'
-import { plural } from '../wording'
 
-defineProps<{ pool: LeftoverPool }>()
+const props = defineProps<{ pool: LeftoverPool }>()
 
 const catalogue = useCatalogueStore()
+
+const content = computed(() => poolContent(props.pool, catalogue))
 </script>
 
 <template>
   <article class="card work-card" data-pool-card>
     <div class="row">
-      <h3>{{ catalogue.designName(pool.designId) }}</h3>
-      <span class="muted">× {{ pool.quantity }}</span>
+      <h3>{{ content.name }}</h3>
+      <span class="muted">{{ content.heading }}</span>
     </div>
-    <p class="muted small">Use what's left. These are the spare stems.</p>
+    <p class="muted small">{{ content.note }}</p>
     <ul class="spare-list">
-      <li v-for="flower in pool.flowers" :key="flower.flowerId">
-        {{ catalogue.flowerName(flower.flowerId) }}: {{ plural(flower.spare, 'spare stem') }}
-      </li>
+      <li v-for="line in content.lines" :key="line">{{ line }}</li>
     </ul>
   </article>
 </template>

@@ -24,6 +24,10 @@ const sizes = computed(() => {
     .filter((size) => size === props.entry.size || free.includes(size))
   return inUse.includes(props.entry.size) ? inUse : [props.entry.size, ...inUse]
 })
+/** Once every size is on the event a card has nothing left to switch to, but still names its own. */
+const showSize = computed(
+  () => sizes.value.length > 1 || catalogue.sizesFor(props.design.id).length > 1,
+)
 const canAddSize = computed(() => store.freeSizes(props.designIndex).length > 0)
 const canRemoveSize = computed(
   () =>
@@ -68,7 +72,7 @@ function onEnabled(event: Event) {
         Takes the spare stems. Review shows how many for each one.
       </p>
       <div class="row controls">
-        <label v-if="sizes.length > 1" class="size">
+        <label v-if="showSize" class="size">
           <span class="visually-hidden">Size of {{ design.name }}</span>
           <select name="size" :value="entry.size" @change="onSize">
             <option v-for="size in sizes" :key="size" :value="size">{{ size }}</option>

@@ -1,20 +1,13 @@
 import { DAY_MS } from './prices'
 import type { Offer } from './prices'
 import type { AllocationResult, FlowerAllocation } from './results'
-import type {
-  EventPlan,
-  FrozenPrice,
-  PlanDesign,
-  PurchaseSnapshot,
-  SoldAs,
-  ViewedPrice,
-} from './types'
+import type { EventPlan, FrozenPrice, PlanDesign, PurchaseSnapshot, ViewedPrice } from './types'
 
 export interface PurchaseChange {
   flowerId: string
   kind: 'added' | 'more' | 'fewer'
-  soldAs: SoldAs
   /** Bunches for bunch-sold flowers with a price, otherwise stems. */
+  unit: 'bunch' | 'stem'
   before: number
   after: number
   addedCostPence: number
@@ -67,8 +60,12 @@ export function buildPurchase(
   return JSON.parse(JSON.stringify(snapshot)) as PurchaseSnapshot
 }
 
-function units({ soldAs, offer, bunches, stems }: FlowerAllocation): number {
-  return soldAs === 'bunch' && offer ? bunches : stems
+function unitOf({ soldAs, offer }: FlowerAllocation): PurchaseChange['unit'] {
+  return soldAs === 'bunch' && offer ? 'bunch' : 'stem'
+}
+
+function units(flower: FlowerAllocation): number {
+  return unitOf(flower) === 'bunch' ? flower.bunches : flower.stems
 }
 
 /** Foraged flowers have no price to buy at, but a flower still awaiting one wasn't bought. */
@@ -83,27 +80,35 @@ export function purchaseChanges(
   const bought = new Map(
     purchase.allocation.flowers.filter(wasBought).map((flower) => [flower.flowerId, flower]),
   )
+  const awaitingPrice = new Set(
+    purchase.allocation.flowers
+      .filter((flower) => flower.stems > 0 && !wasBought(flower))
+      .map(({ flowerId }) => flowerId),
+  )
   const inUse = allocation.flowers.filter((flower) => flower.stems > 0)
 
   const changes = inUse.flatMap((flower): PurchaseChange[] => {
-    const { flowerId, soldAs, offer, costPence } = flower
+    const { flowerId, offer, costPence } = flower
     const earlier = bought.get(flowerId)
+    const unit = unitOf(flower)
     const after = units(flower)
     if (!earlier) {
-      return [{ flowerId, kind: 'added', soldAs, before: 0, after, addedCostPence: costPence }]
+      if (awaitingPrice.has(flowerId) && !wasBought(flower)) return []
+      return [{ flowerId, kind: 'added', unit, before: 0, after, addedCostPence: costPence }]
     }
 
     const before = units(earlier)
     if (after === before) return []
     const kind = after > before ? 'more' : 'fewer'
     const extra = kind === 'more' ? (after - before) * (offer?.pricePence ?? 0) : 0
-    return [{ flowerId, kind, soldAs, before, after, addedCostPence: extra }]
+    return [{ flowerId, kind, unit, before, after, addedCostPence: extra }]
   })
 
   const gone = [...bought.values()].flatMap((flower): PurchaseChange[] => {
-    const { flowerId, soldAs } = flower
+    const { flowerId } = flower
     if (inUse.some((item) => item.flowerId === flowerId)) return []
-    return [{ flowerId, kind: 'fewer', soldAs, before: units(flower), after: 0, addedCostPence: 0 }]
+    const unit = unitOf(flower)
+    return [{ flowerId, kind: 'fewer', unit, before: units(flower), after: 0, addedCostPence: 0 }]
   })
 
   return [...changes, ...gone]
