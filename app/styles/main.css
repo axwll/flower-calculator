@@ -223,6 +223,18 @@ textarea {
   font: inherit;
 }
 
+/* An iPhone sizes a date box to its contents, which can push it past the edge of the page. */
+input[type='date'] {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  appearance: none;
+}
+
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 .tick {
   display: flex;
   min-height: var(--tap);

@@ -1,49 +1,38 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { workCardContent } from '../print/content'
 import { useCatalogueStore } from '../stores/catalogue'
 import type { WorkPlanCard } from '../stores/event'
-import { placementText, plural } from '../wording'
 
 const props = defineProps<{ card: WorkPlanCard }>()
 
 const catalogue = useCatalogueStore()
 
-/** Wider than this will not fit a printed page, and the wording still covers it. */
-const MAX_GRID_PLACEMENTS = 12
-
-/** When every placement is the same, "each" says it all and a grid only adds length. */
-const showGrid = computed(
-  () =>
-    props.card.quantity <= MAX_GRID_PLACEMENTS &&
-    props.card.flowers.some((flower) => flower.ranges.length > 1),
-)
-const placements = computed(() => Array.from({ length: props.card.quantity }, (_, i) => i + 1))
-const heading = computed(() => {
-  const size = props.card.size === 'Fixed' ? '' : `${props.card.size} `
-  return `${size}× ${props.card.quantity}`
-})
+const content = computed(() => workCardContent(props.card, catalogue))
 </script>
 
 <template>
   <article class="card work-card" :data-work-card="card.designId">
     <div class="row">
-      <h3>{{ catalogue.designName(card.designId) }}</h3>
-      <span class="muted">{{ heading }}</span>
+      <h3>{{ content.name }}</h3>
+      <span class="muted">{{ content.heading }}</span>
     </div>
-    <p v-if="card.quantity > 1" class="muted small">Number them 1 to {{ card.quantity }}.</p>
-    <p v-if="card.unassignedStems > 0" class="unassigned">
-      {{ plural(card.unassignedStems, 'stem') }} have no flower chosen.
-    </p>
+    <p v-if="content.numbering" class="muted small">{{ content.numbering }}</p>
+    <p v-if="content.warning" class="unassigned">{{ content.warning }}</p>
 
     <ul class="work-flowers">
-      <li v-for="flower in card.flowers" :key="flower.flowerId" :data-work-flower="flower.flowerId">
-        <span>{{ catalogue.flowerName(flower.flowerId) }}</span>
-        <strong>{{ placementText(flower) }}</strong>
+      <li
+        v-for="flower in content.flowers"
+        :key="flower.flowerId"
+        :data-work-flower="flower.flowerId"
+      >
+        <span>{{ flower.name }}</span>
+        <strong>{{ flower.stems }}</strong>
       </li>
     </ul>
 
-    <div v-if="showGrid" class="grid-scroll">
+    <div v-if="content.grid" class="grid-scroll">
       <table class="grid">
         <caption class="visually-hidden">
           Stems for each placement
@@ -51,17 +40,15 @@ const heading = computed(() => {
         <thead>
           <tr>
             <th scope="col">Flower</th>
-            <th v-for="placement in placements" :key="placement" scope="col">{{ placement }}</th>
+            <th v-for="placement in content.grid.placements" :key="placement" scope="col">
+              {{ placement }}
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="flower in card.flowers"
-            :key="flower.flowerId"
-            :data-grid-flower="flower.flowerId"
-          >
-            <th scope="row">{{ catalogue.flowerName(flower.flowerId) }}</th>
-            <td v-for="(stems, index) in flower.perPlacement" :key="index">{{ stems }}</td>
+          <tr v-for="row in content.grid.rows" :key="row.flowerId" :data-grid-flower="row.flowerId">
+            <th scope="row">{{ row.name }}</th>
+            <td v-for="(stems, index) in row.cells" :key="index">{{ stems }}</td>
           </tr>
         </tbody>
       </table>

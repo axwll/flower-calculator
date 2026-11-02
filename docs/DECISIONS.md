@@ -191,3 +191,15 @@ The owner asked for this phase to start without approving the brief first. They'
 - **Screens that list designs name the size only when an event has two cards of a design,** such as "Pedestals (Small)".
 - **The budget box adds commas as you type,** and keeps the cursor beside the same digit. Price boxes don't, as prices are small.
 - **Event cards show the date with a greyed countdown,** such as "30 Nov 2026 in 28 days", counted in calendar days.
+
+## 2026-11-02: Fixes from the full test run
+
+- **On iPhones and iPads, Save as PDF now builds a real PDF file and opens the share screen,** with Print and Save to Files. This replaces the 'Opening…' fallback above, and goes beyond the plan's "print stylesheet plus the browser's Save as PDF". Tested on a bare page in an installed iOS 27 app, `window.print()` did nothing from the page, a hidden iframe or a window the app opened, and a shared HTML file offered no Print. A shared PDF file was the only route that worked. Safari has the same route because it blocked a second `window.print()` and sometimes ignored the first.
+- **The PDF needs no library.** `app/print/pdf.ts` writes a text-only PDF using Helvetica, which every viewer has. Characters outside its Western European set print as `?`, such as emoji or Greek. Other browsers still use `window.print()` and the print stylesheet, so there are two layouts to keep in step.
+- **The screen and the PDF share their words** through `app/print/content.ts`, so they can't drift apart. The PDF follows the printout: "Work plan" as its title, no event name, client details or quote, and the same one-design-per-page and flower table options. The file is always `work-plan.pdf`, as an event name could contain a client's name.
+- **The print help no longer mentions the installed app or Safari,** because it now only shows outside iPhones. It also goes away if the print screen opens late, as it does after a browser's "allow printing?" question.
+- **A flower waiting for a price stays out of "added after purchase"** until it has one, as the earlier decision intended. `PurchaseChange` now carries `unit` instead of `soldAs`, because a bunch-sold flower with no price is counted in stems.
+- **Voiding a price that's already being sent now queues a void behind it.** The send can't be called back, so removing it from the queue left the price live. The price stays visible until the void goes through. If the Sheet refuses that report, the void is refused too and shows its own message.
+- **A card keeps its size box once every size is on the event,** even with nothing to switch to, so each card still says which size it is.
+- **The Events tab stays highlighted on shared link screens,** as they're reached from Events.
+

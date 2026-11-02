@@ -28,15 +28,15 @@ const storageProblem = computed(() => {
 })
 
 const tabs = [
-  { label: 'Events', to: '/events' },
+  { label: 'Events', to: '/events', also: '/shared' },
   { label: 'Prices', to: '/prices' },
   { label: 'Library', to: '/library' },
   { label: 'Settings', to: '/settings' },
 ]
 
 /** By path, because event pages are not child routes of /events. */
-function isActive(to: string): boolean {
-  return route.path === to || route.path.startsWith(`${to}/`)
+function isActive(...paths: (string | undefined)[]): boolean {
+  return paths.some((to) => to && (route.path === to || route.path.startsWith(`${to}/`)))
 }
 </script>
 
@@ -52,8 +52,8 @@ function isActive(to: string): boolean {
       v-for="tab in tabs"
       :key="tab.to"
       :to="tab.to"
-      :class="{ 'tab-active': isActive(tab.to) }"
-      :aria-current="isActive(tab.to) ? 'page' : undefined"
+      :class="{ 'tab-active': isActive(tab.to, tab.also) }"
+      :aria-current="isActive(tab.to, tab.also) ? 'page' : undefined"
     >
       {{ tab.label }}
     </RouterLink>

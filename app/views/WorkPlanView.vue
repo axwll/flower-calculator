@@ -4,12 +4,20 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import FlowerMatrix from '../components/FlowerMatrix.vue'
 import LeftoverPoolCard from '../components/LeftoverPoolCard.vue'
 import WorkPlanCard from '../components/WorkPlanCard.vue'
+import { matrixContent, poolContent, workCardContent } from '../print/content'
+import { sharePdf, sharesPdf } from '../print/sharePdf'
+import { workPlanPdf } from '../print/workPlanPdf'
+import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
 
 /** Long enough for a phone to open its print screen, and short enough to still feel like a reply. */
 const PRINT_WAIT_MS = 1500
+const PRINT_HELP =
+  "If no print screen opened, press Save as PDF again, or use Print in your browser's menu."
+const SHARE_HELP = "The PDF couldn't be opened. Please try again."
 
 const store = useEventStore()
+const catalogue = useCatalogueStore()
 
 const showMatrix = ref(false)
 const onePerPage = ref(false)
@@ -17,13 +25,14 @@ const onePerPage = ref(false)
 const pools = computed(() => store.allocation?.leftoverPools ?? [])
 
 const opening = ref(false)
-const printHelp = ref(false)
+const printHelp = ref('')
 let printOpened = false
 let printTimer: ReturnType<typeof setTimeout> | undefined
 
 function onBeforePrint() {
   printOpened = true
   opening.value = false
+  printHelp.value = ''
   clearTimeout(printTimer)
 }
 
@@ -35,13 +44,35 @@ onBeforeUnmount(() => {
 
 function showPrintHelp() {
   opening.value = false
-  printHelp.value = true
+  printHelp.value = PRINT_HELP
 }
 
-/** Some phones ignore window.print() without an error, so silence counts as a failure. */
-function savePdf() {
+function currentPdf(): string {
+  return workPlanPdf({
+    cards: store.workPlan.map((card) => workCardContent(card, catalogue)),
+    pools: pools.value.map((pool) => poolContent(pool, catalogue)),
+    matrix: showMatrix.value
+      ? matrixContent(store.workPlan, catalogue, store.designLabel)
+      : undefined,
+    onePerPage: onePerPage.value,
+  })
+}
+
+async function shareCurrentPdf() {
+  opening.value = true
+  try {
+    await sharePdf(currentPdf())
+  } catch (error) {
+    const closed = error instanceof DOMException && error.name === 'AbortError'
+    if (!closed) printHelp.value = SHARE_HELP
+  } finally {
+    opening.value = false
+  }
+}
+
+/** Some browsers ignore window.print() without an error, so silence counts as a failure. */
+function printPage() {
   printOpened = false
-  printHelp.value = false
   opening.value = true
   try {
     window.print()
@@ -50,6 +81,12 @@ function savePdf() {
     return
   }
   if (!printOpened) printTimer = setTimeout(showPrintHelp, PRINT_WAIT_MS)
+}
+
+function savePdf() {
+  printHelp.value = ''
+  if (sharesPdf()) void shareCurrentPdf()
+  else printPage()
 }
 </script>
 
@@ -79,9 +116,7 @@ function savePdf() {
           {{ opening ? 'Opening…' : 'Save as PDF' }}
         </button>
         <p v-if="printHelp" class="small print-help" role="alert" data-print-help>
-          If no print screen opened, this phone may not print from the installed app. On Review, tap
-          Share this plan, open the link in your browser (Safari on iPhone), add the plan there,
-          then use Save as PDF.
+          {{ printHelp }}
         </p>
       </div>
 

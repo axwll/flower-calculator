@@ -47,6 +47,12 @@ describe('App shell', () => {
     expect(wrapper.find('nav.tabs a.tab-active').text()).toBe('Events')
   })
 
+  it.each(['/shared', '/shared/abc'])('keeps Events marked on %s', async (path) => {
+    const { wrapper } = await mountApp(path)
+
+    expect(wrapper.find('nav.tabs a.tab-active').text()).toBe('Events')
+  })
+
   it('goes back to the previous screen', async () => {
     const { router } = await mountApp()
     await router.push('/prices')

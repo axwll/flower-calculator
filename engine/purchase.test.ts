@@ -215,37 +215,37 @@ describe('purchaseChanges', () => {
 
   it('flags a flower that was not purchased, at its live price', () => {
     expect(changes(lines(['x', 5]), lines(['x', 5], ['y', 12]))).toEqual([
-      { flowerId: 'y', kind: 'added', soldAs: 'bunch', before: 0, after: 2, addedCostPence: 1000 },
+      { flowerId: 'y', kind: 'added', unit: 'bunch', before: 0, after: 2, addedCostPence: 1000 },
     ])
   })
 
   it('flags extra bunches of a purchased flower, at its frozen price', () => {
     expect(changes(lines(['x', 5]), lines(['x', 25]))).toEqual([
-      { flowerId: 'x', kind: 'more', soldAs: 'bunch', before: 1, after: 3, addedCostPence: 2000 },
+      { flowerId: 'x', kind: 'more', unit: 'bunch', before: 1, after: 3, addedCostPence: 2000 },
     ])
   })
 
   it('counts stem-sold flowers in stems', () => {
     expect(changes(lines(['stem', 3]), lines(['stem', 5]))).toEqual([
-      { flowerId: 'stem', kind: 'more', soldAs: 'stem', before: 3, after: 5, addedCostPence: 400 },
+      { flowerId: 'stem', kind: 'more', unit: 'stem', before: 3, after: 5, addedCostPence: 400 },
     ])
   })
 
   it('flags fewer bunches without adding any cost', () => {
     expect(changes(lines(['x', 25]), lines(['x', 5]))).toEqual([
-      { flowerId: 'x', kind: 'fewer', soldAs: 'bunch', before: 3, after: 1, addedCostPence: 0 },
+      { flowerId: 'x', kind: 'fewer', unit: 'bunch', before: 3, after: 1, addedCostPence: 0 },
     ])
   })
 
   it('flags a purchased flower that has gone', () => {
     expect(changes(lines(['x', 5], ['y', 5]), lines(['x', 5]))).toEqual([
-      { flowerId: 'y', kind: 'fewer', soldAs: 'bunch', before: 1, after: 0, addedCostPence: 0 },
+      { flowerId: 'y', kind: 'fewer', unit: 'bunch', before: 1, after: 0, addedCostPence: 0 },
     ])
   })
 
   it('counts more foraged stems at no cost', () => {
     expect(changes(lines(['fern', 2]), lines(['fern', 5]))).toEqual([
-      { flowerId: 'fern', kind: 'more', soldAs: 'foraged', before: 2, after: 5, addedCostPence: 0 },
+      { flowerId: 'fern', kind: 'more', unit: 'stem', before: 2, after: 5, addedCostPence: 0 },
     ])
   })
 
@@ -256,7 +256,29 @@ describe('purchaseChanges', () => {
     const after = run(before, [zed], [report('z', 's', 700, 10)])
 
     expect(purchaseChanges(snapshot, after)).toEqual([
-      { flowerId: 'z', kind: 'added', soldAs: 'bunch', before: 0, after: 1, addedCostPence: 700 },
+      { flowerId: 'z', kind: 'added', unit: 'bunch', before: 0, after: 1, addedCostPence: 700 },
+    ])
+  })
+})
+
+describe('flowers with no price', () => {
+  const before = plan([design('a', 1, [named('x', 5), named('z', 5)])])
+
+  it('says nothing about a flower still waiting for a price', () => {
+    const flowers = [flower('x'), flower('z')]
+    const prices = [report('x', 's', 1000, 10)]
+    const snapshot = purchased(before, flowers, prices)
+
+    expect(purchaseChanges(snapshot, run(before, flowers, prices))).toEqual([])
+  })
+
+  it('counts a new flower with no price in stems', () => {
+    const flowers = [flower('x'), flower('z')]
+    const prices = [report('x', 's', 1000, 10)]
+    const snapshot = purchased(plan([design('a', 1, [named('x', 5)])]), flowers, prices)
+
+    expect(purchaseChanges(snapshot, run(before, flowers, prices))).toEqual([
+      { flowerId: 'z', kind: 'added', unit: 'stem', before: 0, after: 5, addedCostPence: 0 },
     ])
   })
 })
