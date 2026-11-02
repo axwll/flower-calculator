@@ -4,7 +4,9 @@ import { useRouter } from 'vue-router'
 
 import { parsePounds } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import { useEventStore } from '../stores/event'
+import { groupPounds } from '../wording'
 
 const router = useRouter()
 const store = useEventStore()
@@ -20,6 +22,22 @@ const budgetError = ref('')
 const hasFrozenPrices = computed(() =>
   Boolean(store.events.find(({ id }) => id === copyFrom.value)?.frozenPrices?.length),
 )
+
+/** Rewriting the box moves the cursor, so it goes back beside the same digit. */
+function onBudget(event: Event) {
+  const input = event.target as HTMLInputElement
+  const typed = input.value.slice(0, input.selectionStart ?? input.value.length)
+  const digitsBefore = typed.replaceAll(',', '').length
+
+  budget.value = groupPounds(input.value)
+  input.value = budget.value
+
+  let cursor = 0
+  for (let seen = 0; seen < digitsBefore && cursor < input.value.length; cursor += 1) {
+    if (input.value[cursor] !== ',') seen += 1
+  }
+  input.setSelectionRange(cursor, cursor)
+}
 
 function submit() {
   const trimmedName = name.value.trim()
@@ -46,6 +64,7 @@ function submit() {
 
 <template>
   <section class="page">
+    <BackLink to="/events" label="Events" />
     <h1>New event</h1>
     <form novalidate @submit.prevent="submit">
       <label class="field">
@@ -59,7 +78,14 @@ function submit() {
       </label>
       <label class="field">
         <span class="field-label">Target budget (optional)</span>
-        <input v-model="budget" name="budget" type="text" inputmode="decimal" autocomplete="off" />
+        <input
+          :value="budget"
+          name="budget"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          @input="onBudget"
+        />
         <span v-if="budgetError" class="error" role="alert">{{ budgetError }}</span>
       </label>
       <label v-if="store.events.length > 0" class="field">

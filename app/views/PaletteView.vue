@@ -30,7 +30,7 @@ function splitsFor(role: Role) {
     .filter((line) => line.role === role && line.total > 0)
     .map((line) => ({
       key: `${line.designIndex}-${line.lineIndex}`,
-      text: `${catalogue.designName(line.designId)}: ${splitText(line)}`,
+      text: `${store.designLabel(line.designIndex)}: ${splitText(line)}`,
     }))
 }
 </script>

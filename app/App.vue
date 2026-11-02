@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import { useCatalogueStore } from './stores/catalogue'
 import { useEventStore } from './stores/event'
 import { useInstallStore } from './stores/install'
@@ -57,4 +58,5 @@ function isActive(to: string): boolean {
       {{ tab.label }}
     </RouterLink>
   </nav>
+  <ConfirmDialog />
 </template>

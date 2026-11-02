@@ -4,9 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { formatPence, resolveOffers } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import PriceAge from '../components/PriceAge.vue'
 import PriceForm from '../components/PriceForm.vue'
 import { useCatalogueStore } from '../stores/catalogue'
+import { useConfirmStore } from '../stores/confirm'
 import { usePricesStore } from '../stores/prices'
 import { useThresholdsStore } from '../stores/thresholds'
 
@@ -15,6 +17,7 @@ const HISTORY_LENGTH = 10
 const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
+const confirm = useConfirmStore()
 const prices = usePricesStore()
 const thresholds = useThresholdsStore()
 
@@ -43,14 +46,27 @@ const history = computed(() =>
     .slice(0, HISTORY_LENGTH),
 )
 
+/** The way back depends on where the person came from. */
+const parent = computed(() => {
+  if (route.query.from === 'library') {
+    return { to: `/library/flowers/${String(route.params.flowerId)}`, label: 'flower' }
+  }
+  if (route.query.from === 'shop') {
+    const query = supplierId.value ? { supplier: supplierId.value } : {}
+    return { to: { path: '/prices/shop', query }, label: 'Shop mode' }
+  }
+  return { to: '/prices', label: 'Prices' }
+})
+
 function onSaved(savedSupplierId: string) {
   void router.push(
-    route.query.from === 'shop' ? `/prices/shop?supplier=${savedSupplierId}` : '/prices',
+    route.query.from === 'shop' ? `/prices/shop?supplier=${savedSupplierId}` : parent.value.to,
   )
 }
 
-function voidReport(reportId: string) {
-  if (window.confirm('Void this price? The one before it comes back.')) {
+async function voidReport(reportId: string) {
+  const question = 'Void this price? The one before it comes back.'
+  if (await confirm.ask(question, { yes: 'Void', no: 'Keep it' })) {
     void prices.voidReport(reportId)
   }
 }
@@ -58,6 +74,7 @@ function voidReport(reportId: string) {
 
 <template>
   <section class="page">
+    <BackLink :to="parent.to" :label="parent.label" />
     <template v-if="flower">
       <h1>{{ flower.name }}</h1>
 

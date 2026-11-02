@@ -141,11 +141,11 @@ describe('using thresholds', () => {
       JSON.stringify({ ...DEFAULT_SETTINGS, bigChangePercent: 10 }),
     )
     localStorage.setItem('nickname', 'Sam')
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const { wrapper } = await mountApp('/prices/focus-rose')
     await wrapper.find('input[name="price"]').setValue('50.00')
     await wrapper.find('form').trigger('submit')
+    await flushPromises()
 
-    expect(confirm).toHaveBeenCalled()
+    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(true)
   })
 })

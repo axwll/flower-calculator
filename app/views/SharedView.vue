@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { formatPence } from '@engine'
 import type { EventPlan } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import { openShared, shareIdFrom } from '../share/share'
 import { useEventStore } from '../stores/event'
 import { useInstallStore } from '../stores/install'
@@ -67,6 +68,7 @@ function add() {
 
 <template>
   <section class="page">
+    <BackLink to="/events" label="Events" />
     <template v-if="!shareId">
       <h1>Open a shared link</h1>
       <form class="card" novalidate @submit.prevent="submitLink">

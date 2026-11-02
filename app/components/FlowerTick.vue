@@ -31,7 +31,7 @@ const designsUsingRole = computed(() => {
   return store.lines.flatMap((line) => {
     if (line.role !== props.role || line.total === 0 || seen.has(line.designIndex)) return []
     seen.add(line.designIndex)
-    return [{ designIndex: line.designIndex, name: catalogue.designName(line.designId) }]
+    return [{ designIndex: line.designIndex, name: store.designLabel(line.designIndex) }]
   })
 })
 

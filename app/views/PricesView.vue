@@ -58,7 +58,7 @@ const rows = computed(() => {
     <RouterLink
       v-for="{ flower, offers } in rows"
       :key="flower.id"
-      class="card price-row"
+      class="card card-link price-row"
       :to="`/prices/${flower.id}`"
       :data-price-flower="flower.id"
     >
@@ -78,12 +78,8 @@ const rows = computed(() => {
 }
 
 .price-row {
-  display: flex;
-  min-height: var(--tap);
   flex-direction: column;
   gap: 2px;
-  color: var(--ink);
-  text-decoration: none;
 }
 
 .offer-line {

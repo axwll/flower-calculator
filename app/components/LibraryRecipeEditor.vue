@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import type { Recipe, RecipeLine, Role, Size } from '@engine'
 
 import { useCatalogueStore } from '../stores/catalogue'
 import { useLibraryStore } from '../stores/library'
+import { useUnsavedChanges } from '../unsaved'
 import { plural, ROLES, roleLabel } from '../wording'
 import QuantityStepper from './QuantityStepper.vue'
 
 const props = defineProps<{ designId: string; size: Size; start?: Recipe | undefined }>()
-const emit = defineEmits<{ saved: [] }>()
+const emit = defineEmits<{ saved: []; edited: [] }>()
 
 const catalogue = useCatalogueStore()
 const library = useLibraryStore()
@@ -17,6 +18,15 @@ const library = useLibraryStore()
 const lines = ref<RecipeLine[]>((props.start?.lines ?? []).map((line) => ({ ...line })))
 const leftOut = ref<string[]>([...(props.start?.excludedFlowerIds ?? [])])
 const problem = ref('')
+
+const { changed, markSaved } = useUnsavedChanges(() => [lines.value, [...leftOut.value].sort()])
+
+/** A new size starts as a copy of another, so it's ready to save as it stands. */
+const isNewSize = computed(() => props.start !== undefined && props.start.size !== props.size)
+
+watch(changed, (isChanged) => {
+  if (isChanged) emit('edited')
+})
 
 const flowerOptions = computed(() =>
   [...catalogue.activeFlowers].sort((a, b) => a.name.localeCompare(b.name)),
@@ -63,8 +73,12 @@ async function submit() {
       ...(excludedFlowerIds.length > 0 ? { excludedFlowerIds } : {}),
     },
   })
-  if (failed) problem.value = failed
-  else emit('saved')
+  if (failed) {
+    problem.value = failed
+    return
+  }
+  markSaved()
+  emit('saved')
 }
 </script>
 
@@ -115,8 +129,12 @@ async function submit() {
     </details>
 
     <p v-if="problem" class="error" role="alert">{{ problem }}</p>
-    <button class="button button-primary" type="submit" :disabled="library.saving">
-      {{ library.saving ? 'Saving…' : 'Save recipe' }}
+    <button
+      class="button button-primary"
+      type="submit"
+      :disabled="library.saving || !(changed || isNewSize)"
+    >
+      {{ library.task === 'saveRecipe' ? 'Saving…' : 'Save recipe' }}
     </button>
   </form>
 </template>

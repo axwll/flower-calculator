@@ -1,6 +1,6 @@
 # Phase 7 brief: Purchase and sharing
 
-Status: **built, awaiting owner review.** The owner asked for this phase to start without approving the brief first, so its decisions haven't been reviewed yet. The backend is deployed to the test Sheet.
+Status: **built, awaiting owner review.** The owner asked for this phase to start without approving the brief first. They've since confirmed decisions 1 and 7. The backend is deployed to the test Sheet.
 
 Goal: an event's prices can be frozen when the flowers are bought, and a plan can be sent to someone else's phone. See [PLAN.md](../PLAN.md) section 8.
 
@@ -142,7 +142,7 @@ Each will go in `DECISIONS.md`.
 
 ## Out of scope
 
-Revoking shares, sending changes back, viewing friends' plans, live collaboration, delete event, undoing a purchase, and backup nudges beyond the one after a purchase. Nudges and the budget screen are Phase 8.
+Revoking shares, sending changes back, viewing friends' plans, live collaboration, undoing a purchase, and backup nudges beyond the one after a purchase. Nudges and the budget screen are Phase 8.
 
 ## Known risks
 

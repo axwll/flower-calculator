@@ -63,7 +63,7 @@ function show(id: string) {
         <RouterLink
           v-for="design in catalogue.designs"
           :key="design.id"
-          class="card library-row"
+          class="card card-link library-row"
           :data-library-design="design.id"
           :to="`/library/designs/${design.id}`"
         >
@@ -82,7 +82,7 @@ function show(id: string) {
         <RouterLink
           v-for="flower in flowers"
           :key="flower.id"
-          class="card library-row"
+          class="card card-link library-row"
           :data-library-flower="flower.id"
           :to="`/library/flowers/${flower.id}`"
         >
@@ -98,7 +98,7 @@ function show(id: string) {
         <RouterLink
           v-for="supplier in catalogue.suppliers"
           :key="supplier.id"
-          class="card library-row"
+          class="card card-link library-row"
           :data-library-supplier="supplier.id"
           :to="`/library/suppliers/${supplier.id}`"
         >
@@ -127,12 +127,9 @@ function show(id: string) {
 }
 
 .library-row {
-  display: flex;
   flex-wrap: wrap;
   gap: 4px 8px;
   align-items: center;
   justify-content: space-between;
-  color: var(--ink);
-  text-decoration: none;
 }
 </style>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { formatPence, resolveOffers } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import PriceAge from '../components/PriceAge.vue'
 import { useCatalogueStore } from '../stores/catalogue'
 import { useThresholdsStore } from '../stores/thresholds'
@@ -38,6 +39,7 @@ const rows = computed(() => {
 
 <template>
   <section class="page">
+    <BackLink to="/prices" label="Prices" />
     <h1>Shop mode</h1>
     <label class="field">
       <span class="field-label">Which supplier are you at?</span>
@@ -53,7 +55,7 @@ const rows = computed(() => {
     <RouterLink
       v-for="{ flower, offer } in rows"
       :key="flower.id"
-      class="card shop-row"
+      class="card card-link shop-row"
       :to="`/prices/${flower.id}?supplier=${supplierId}&from=shop`"
       :data-shop-flower="flower.id"
     >
@@ -65,12 +67,8 @@ const rows = computed(() => {
 
 <style scoped>
 .shop-row {
-  display: flex;
-  min-height: var(--tap);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  color: var(--ink);
-  text-decoration: none;
 }
 </style>

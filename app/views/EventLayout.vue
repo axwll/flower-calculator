@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import BackLink from '../components/BackLink.vue'
 import SummaryBar from '../components/SummaryBar.vue'
 import { useEventStore } from '../stores/event'
 
@@ -17,11 +18,18 @@ const steps = computed(() => {
     { label: 'Work plan', to: `${base}/work-plan` },
   ]
 })
+
+const parent = computed(() =>
+  route.name === 'purchase'
+    ? { to: `/events/${String(route.params.eventId)}/review`, label: 'Review' }
+    : { to: '/events', label: 'Events' },
+)
 </script>
 
 <template>
   <div v-if="store.current">
     <header class="event-header">
+      <BackLink :to="parent.to" :label="parent.label" />
       <h1>{{ store.current.name }}</h1>
       <p v-if="store.current.purchase"><span class="badge">Purchased</span></p>
       <nav class="steps" aria-label="Steps">

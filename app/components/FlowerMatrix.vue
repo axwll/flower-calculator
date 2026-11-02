@@ -34,7 +34,7 @@ const rows = computed(() => {
           <tr>
             <th scope="col">Flower</th>
             <th v-for="card in store.workPlan" :key="card.designIndex" scope="col">
-              {{ catalogue.designName(card.designId) }}
+              {{ store.designLabel(card.designIndex) }}
             </th>
             <th scope="col">Total</th>
           </tr>

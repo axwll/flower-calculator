@@ -4,8 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 
 import type { Flower, Role, SoldAs } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import { useCatalogueStore } from '../stores/catalogue'
 import { newId, useLibraryStore } from '../stores/library'
+import { useUnsavedChanges } from '../unsaved'
 import { ROLES, roleLabel } from '../wording'
 
 const route = useRoute()
@@ -24,6 +26,15 @@ const trackLeftovers = ref(true)
 const active = ref(true)
 const problem = ref('')
 
+const { changed, markSaved } = useUnsavedChanges(() => [
+  name.value,
+  colour.value,
+  [...roles.value].sort(),
+  soldAs.value,
+  trackLeftovers.value,
+  active.value,
+])
+
 // Keyed on the id, so a refresh in the background can't overwrite what's being typed.
 watch(
   () => existing.value?.id,
@@ -34,6 +45,7 @@ watch(
     soldAs.value = existing.value?.soldAs ?? 'bunch'
     trackLeftovers.value = existing.value?.trackLeftovers ?? true
     active.value = existing.value?.active ?? true
+    markSaved()
   },
   { immediate: true },
 )
@@ -64,17 +76,22 @@ async function submit() {
     ...(colour.value.trim() ? { colour: colour.value.trim() } : {}),
   }
   const failed = await library.save({ action: 'saveFlower', flower })
-  if (failed) problem.value = failed
-  else await router.push({ path: '/library', query: { show: 'flowers' } })
+  if (failed) {
+    problem.value = failed
+    return
+  }
+  markSaved()
+  await router.push({ path: '/library', query: { show: 'flowers' } })
 }
 </script>
 
 <template>
   <section class="page">
+    <BackLink :to="{ path: '/library', query: { show: 'flowers' } }" label="Library" />
     <h1>{{ existing ? 'Edit flower' : 'Add a flower' }}</h1>
     <p v-if="needsPrice" class="small">
       No price yet, so this shows as needs data.
-      <RouterLink :to="`/prices/${existing?.id}`">Add a price</RouterLink>
+      <RouterLink :to="`/prices/${existing?.id}?from=library`">Add a price</RouterLink>
     </p>
 
     <form class="card" novalidate @submit.prevent="submit">
@@ -118,7 +135,7 @@ async function submit() {
       </p>
 
       <p v-if="problem" class="error" role="alert">{{ problem }}</p>
-      <button class="button button-primary" type="submit" :disabled="library.saving">
+      <button class="button button-primary" type="submit" :disabled="library.saving || !changed">
         {{ library.saving ? 'Saving…' : 'Save flower' }}
       </button>
     </form>

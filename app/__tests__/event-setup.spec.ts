@@ -73,6 +73,49 @@ describe('event setup', () => {
     expect(useEventStore().events[0]?.targetBudgetPence).toBe(125050)
   })
 
+  it('adds commas to the budget as it is typed', async () => {
+    const { wrapper } = await mountApp('/events/new')
+    const budget = wrapper.find('input[name="budget"]')
+
+    await budget.setValue('1000')
+    expect((budget.element as HTMLInputElement).value).toBe('1,000')
+
+    await budget.setValue('1,000000.5')
+    expect((budget.element as HTMLInputElement).value).toBe('1,000,000.5')
+  })
+
+  it('stores a budget with commas in pence', async () => {
+    const { wrapper, router } = await mountApp('/events/new')
+    await wrapper.find('input[name="name"]').setValue('Big')
+    await wrapper.find('input[name="budget"]').setValue('12500')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(useEventStore().current?.targetBudgetPence).toBe(1_250_000)
+    expect(router.currentRoute.value.path).toContain('/designs')
+  })
+
+  it('keeps the cursor beside the same digit', async () => {
+    const { wrapper } = await mountApp('/events/new')
+    const budget = wrapper.find('input[name="budget"]')
+    const input = budget.element as HTMLInputElement
+    await budget.setValue('1,000')
+
+    input.value = '19,000'
+    input.setSelectionRange(2, 2)
+    await budget.trigger('input')
+
+    expect(input.value).toBe('19,000')
+    expect(input.selectionStart).toBe(2)
+
+    input.value = '109,0000'
+    input.setSelectionRange(2, 2)
+    await budget.trigger('input')
+
+    expect(input.value).toBe('1,090,000')
+    expect(input.selectionStart).toBe(3)
+  })
+
   it('leaves the budget unset when it is blank', async () => {
     const { wrapper } = await mountApp('/events/new')
     await fillIn(wrapper, 'June wedding')

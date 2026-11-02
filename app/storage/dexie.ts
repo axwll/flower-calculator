@@ -29,6 +29,7 @@ export function dexieRepository(): EventRepository {
     save: async (event: EventPlan) => {
       await database.events.put(event)
     },
+    remove: (id) => database.events.delete(id),
   }
 }
 

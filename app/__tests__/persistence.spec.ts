@@ -16,7 +16,11 @@ async function reopen() {
 }
 
 function failingSaves(): EventRepository {
-  return { loadAll: async () => [], save: () => Promise.reject(new Error('Disk full')) }
+  return {
+    ...memoryRepository(),
+    loadAll: async () => [],
+    save: () => Promise.reject(new Error('Disk full')),
+  }
 }
 
 afterEach(() => {
@@ -113,7 +117,7 @@ describe('storage problems', () => {
     const repository = memoryRepository()
     let failing = true
     setEventRepository({
-      loadAll: repository.loadAll,
+      ...repository,
       save: (event) => (failing ? Promise.reject(new Error('No')) : repository.save(event)),
     })
     const { wrapper } = await mountApp()
@@ -129,8 +133,8 @@ describe('storage problems', () => {
 
   it('says when events could not be loaded', async () => {
     setEventRepository({
+      ...memoryRepository(),
       loadAll: () => Promise.reject(new Error('Blocked')),
-      save: async () => undefined,
     })
     const { wrapper } = await mountApp()
 

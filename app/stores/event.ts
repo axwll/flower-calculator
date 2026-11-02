@@ -220,6 +220,19 @@ export const useEventStore = defineStore('event', () => {
     return event.id
   }
 
+  /** Storage goes first, so a failed delete can't bring the event back on the next launch. */
+  async function deleteEvent(id: string): Promise<boolean> {
+    if (!events.value.some((event) => event.id === id)) return false
+    try {
+      await repository.remove(id)
+    } catch {
+      return false
+    }
+    if (currentId.value === id) currentId.value = null
+    events.value = events.value.filter((event) => event.id !== id)
+    return true
+  }
+
   function countExisting(incoming: EventPlan[]): number {
     return incoming.filter((event) => events.value.some((item) => item.id === event.id)).length
   }
@@ -268,7 +281,7 @@ export const useEventStore = defineStore('event', () => {
   function designChangeFor(designIndex: number): DesignChange | null {
     const event = current.value
     const design = event?.designs[designIndex]
-    return event?.purchase && design ? designChange(event.purchase, design) : null
+    return event?.purchase && design ? designChange(event.purchase, design, event.designs) : null
   }
 
   /** Waits for saved prices, so the seed's invented ones never count as what was seen. */
@@ -306,11 +319,51 @@ export const useEventStore = defineStore('event', () => {
     if (design) design.enabled = enabled
   }
 
+  function sameDesign(designIndex: number): PlanDesign[] {
+    const designs = current.value?.designs ?? []
+    const designId = designs[designIndex]?.designId
+    return designs.filter((design) => design.designId === designId)
+  }
+
+  /** Sizes with a recipe that this event doesn't already have a card for. */
+  function freeSizes(designIndex: number): Size[] {
+    const design = current.value?.designs[designIndex]
+    if (!design) return []
+    const taken = sameDesign(designIndex).map(({ size }) => size)
+    return catalogue.sizesFor(design.designId).filter((size) => !taken.includes(size))
+  }
+
+  /** A second card for the same design, so an event can mix sizes. */
+  function addSize(designIndex: number) {
+    const source = current.value?.designs[designIndex]
+    const [size] = freeSizes(designIndex)
+    const added = source && size && planDesign(source.designId, size, false)
+    if (!added) return
+    added.excludedFlowerIds = [
+      ...new Set([...source.excludedFlowerIds, ...added.excludedFlowerIds]),
+    ]
+    current.value?.designs.splice(designIndex + 1, 0, added)
+  }
+
+  /** Every design keeps at least one card. */
+  function removeSize(designIndex: number) {
+    if (sameDesign(designIndex).length > 1) current.value?.designs.splice(designIndex, 1)
+  }
+
+  /** Names the size only when the name alone wouldn't say which card this is. */
+  function designLabel(designIndex: number): string {
+    const design = current.value?.designs[designIndex]
+    if (!design) return ''
+    const name = catalogue.designName(design.designId)
+    return sameDesign(designIndex).length > 1 ? `${name} (${design.size})` : name
+  }
+
   /** Takes a fresh copy of that size's recipe, so edits to the old size are replaced. */
   function setSize(designIndex: number, size: Size) {
     const design = current.value?.designs[designIndex]
     const recipe = design && catalogue.recipeFor(design.designId, size)
     if (!design || !recipe) return
+    if (sameDesign(designIndex).some((other) => other !== design && other.size === size)) return
     design.size = size
     design.recipe = recipeCopy(recipe)
     const leftOut = new Set([...design.excludedFlowerIds, ...(recipe.excludedFlowerIds ?? [])])
@@ -422,6 +475,7 @@ export const useEventStore = defineStore('event', () => {
     unreadableEvents,
     whenReady,
     duplicateEvent,
+    deleteEvent,
     countExisting,
     importEvents,
     addShared,
@@ -449,6 +503,10 @@ export const useEventStore = defineStore('event', () => {
     setQuantity,
     setEnabled,
     setSize,
+    freeSizes,
+    addSize,
+    removeSize,
+    designLabel,
     setLineStems,
     swapLineForFlower,
     libraryDraft,

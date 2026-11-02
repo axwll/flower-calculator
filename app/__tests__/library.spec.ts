@@ -11,7 +11,7 @@ import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
 import { useLibraryStore } from '../stores/library'
 import { usePricesStore } from '../stores/prices'
-import { mountApp, mountEvent } from './helpers'
+import { answerConfirm, mountApp, mountEvent } from './helpers'
 
 let sent: ApiAction[]
 let reply: SendResult
@@ -247,7 +247,7 @@ describe('flower editor', () => {
   it('links to the price form when a bought flower has no price', async () => {
     const { wrapper } = await mountAdmin('/library/flowers/scabious')
 
-    expect(wrapper.find('a[href="/prices/scabious"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/prices/scabious?from=library"]').exists()).toBe(true)
   })
 
   it('keeps what was typed when a save fails', async () => {
@@ -567,10 +567,10 @@ describe('recipe editor', () => {
   })
 
   it('retires a size after asking', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { wrapper } = await openRecipe('pedestal')
     await byText(wrapper, 'Retire this size').trigger('click')
     await flushPromises()
+    await answerConfirm(wrapper, true)
 
     expect(lastSent('saveRecipe').recipe).toMatchObject({
       designId: 'pedestal',
@@ -580,9 +580,10 @@ describe('recipe editor', () => {
   })
 
   it('leaves a retired size alone if the answer is no', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     const { wrapper } = await openRecipe('pedestal')
     await byText(wrapper, 'Retire this size').trigger('click')
+    await flushPromises()
+    await answerConfirm(wrapper, false)
 
     expect(sent).toEqual([])
   })
@@ -707,7 +708,7 @@ describe('make a variant', () => {
     const { wrapper } = await makeVariant(' ')
 
     expect(sent).toEqual([])
-    expect(wrapper.find('[role="alert"]').text()).toContain('name')
+    expect(byText(wrapper, 'Copy design').attributes('disabled')).toBeDefined()
   })
 })
 

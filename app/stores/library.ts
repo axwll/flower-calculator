@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { Design, RecipeDraft } from '@engine'
 
@@ -33,7 +33,9 @@ export const useLibraryStore = defineStore('library', () => {
   const prices = usePricesStore()
 
   const adminOn = ref(readPreference(ADMIN_ON_KEY) === 'yes' && prices.adminKey !== '')
-  const saving = ref(false)
+  /** Which save is running, so only its own button says so. */
+  const task = ref<string | null>(null)
+  const saving = computed(() => task.value !== null)
 
   function setAdminOn(on: boolean) {
     adminOn.value = on
@@ -57,18 +59,18 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   /** Not queued, so the person knows straight away. Returns a problem, or null once saved. */
-  async function save(edit: AdminEdit): Promise<string | null> {
+  async function save(edit: AdminEdit, name: string = edit.action): Promise<string | null> {
     if (saving.value) return null
     if (!prices.nickname) return 'Add a nickname in Settings first.'
 
-    saving.value = true
+    task.value = name
     const result = await apiClient().send({
       ...edit,
       adminKey: prices.adminKey,
       nickname: prices.nickname,
     })
     if (result.status === 'sent') await catalogue.refresh()
-    saving.value = false
+    task.value = null
 
     if (result.status === 'sent') return null
     if (result.status === 'retry') return NO_CONNECTION
@@ -82,8 +84,11 @@ export const useLibraryStore = defineStore('library', () => {
     drafts: RecipeDraft[],
   ): Promise<{ id: string; problem: string | null }> {
     const recipes = drafts.map((draft) => ({ ...draft, designId: design.id }))
-    return { id: design.id, problem: await save({ action: 'saveDesign', design, recipes }) }
+    return {
+      id: design.id,
+      problem: await save({ action: 'saveDesign', design, recipes }, 'saveNewDesign'),
+    }
   }
 
-  return { adminOn, saving, setKey, checkKey, save, saveNewDesign }
+  return { adminOn, task, saving, setKey, checkKey, save, saveNewDesign }
 })

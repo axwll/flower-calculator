@@ -16,7 +16,7 @@ export default defineConfig({
       includeManifestIcons: false,
       manifest: {
         name: 'Flower Calculator',
-        short_name: 'Flowers',
+        short_name: 'Flower Calc',
         description: 'Turn flower recipes and prices into an event estimate and work plan.',
         lang: 'en-GB',
         display: 'standalone',

@@ -39,10 +39,6 @@ async function updateRecipe() {
 async function saveNew() {
   const draft = readyDraft()
   if (!draft || !design.value) return
-  if (!name.value.trim()) {
-    problem.value = 'Enter a name for the new design.'
-    return
-  }
   const { problem: failed } = await library.saveNewDesign(
     newDesignFrom(design.value, name.value.trim()),
     [draft],
@@ -70,7 +66,7 @@ async function saveNew() {
         :disabled="library.saving"
         @click="updateRecipe"
       >
-        {{ library.saving ? 'Saving…' : `Update ${design?.name} (${entry?.size})` }}
+        {{ library.task === 'saveRecipe' ? 'Saving…' : `Update ${design?.name} (${entry?.size})` }}
       </button>
       <label class="field new-name">
         <span class="field-label">Or save as a new design</span>
@@ -79,10 +75,10 @@ async function saveNew() {
       <button
         class="button save-new-design"
         type="button"
-        :disabled="library.saving"
+        :disabled="library.saving || !name.trim()"
         @click="saveNew"
       >
-        Save as a new design
+        {{ library.task === 'saveNewDesign' ? 'Saving…' : 'Save as a new design' }}
       </button>
       <p v-if="problem" class="error" role="alert">{{ problem }}</p>
       <p v-if="done" class="small" role="status">{{ done }}</p>

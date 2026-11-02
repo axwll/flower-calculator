@@ -122,8 +122,28 @@ function matches(a: PlanDesign, b: PlanDesign): boolean {
   )
 }
 
-export function designChange(purchase: PurchaseSnapshot, design: PlanDesign): DesignChange | null {
-  const earlier = purchase.designs.find((item) => item.designId === design.designId)
+/** The same size, or failing that a bought size no longer on the event, as this card was switched. */
+function boughtDesign(
+  purchase: PurchaseSnapshot,
+  design: PlanDesign,
+  plan: PlanDesign[],
+): PlanDesign | undefined {
+  const bought = purchase.designs.filter((item) => item.designId === design.designId)
+  return (
+    bought.find((item) => item.size === design.size) ??
+    bought.find(
+      (item) =>
+        !plan.some(({ designId, size }) => designId === item.designId && size === item.size),
+    )
+  )
+}
+
+export function designChange(
+  purchase: PurchaseSnapshot,
+  design: PlanDesign,
+  plan: PlanDesign[] = [design],
+): DesignChange | null {
+  const earlier = boughtDesign(purchase, design, plan)
   if (!isPlaced(design)) return isPlaced(earlier) ? 'changed' : null
   if (!isPlaced(earlier)) return 'added'
   return matches(earlier, design) ? null : 'changed'

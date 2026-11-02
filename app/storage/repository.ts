@@ -4,6 +4,7 @@ import type { EventPlan } from '@engine'
 export interface EventRepository {
   loadAll(): Promise<unknown[]>
   save(event: EventPlan): Promise<void>
+  remove(id: string): Promise<void>
 }
 
 export function memoryRepository(initial: unknown[] = []): EventRepository {
@@ -14,6 +15,9 @@ export function memoryRepository(initial: unknown[] = []): EventRepository {
     loadAll: async () => [...records.values()],
     save: async (event) => {
       records.set(event.id, JSON.parse(JSON.stringify(event)))
+    },
+    remove: async (id) => {
+      records.delete(id)
     },
   }
 }

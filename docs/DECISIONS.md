@@ -136,7 +136,7 @@ The owner approved the brief and its four recommendations.
 
 ## 2026-10-30: Phase 7 decisions
 
-The owner asked for this phase to start without approving the brief first, so these haven't been reviewed yet.
+The owner asked for this phase to start without approving the brief first. They've since confirmed two of these: a purchase stays final unless someone asks for undo, and a share can include the event name, date and budget.
 
 - **A purchase can't be undone.** The plan makes the snapshot immutable, so the confirmation screen does the protecting. Duplicating the event gives a clean copy.
 - **`EventPlan` gained `frozenPrices` beside `purchase`.** Allocation reads the list, so "keep frozen prices" on a duplicate works on an event that isn't purchased. The snapshot keeps its own copy, which nothing edits.
@@ -158,3 +158,36 @@ The owner asked for this phase to start without approving the brief first, so th
 - **`ApiClient` gained `sharePlan` and `fetchShared`.** `offlineClient` is now exported, so test clients inherit them.
 - **Printouts are unchanged.** They show what to make, not what was bought.
 - **Tests were written and run failing first** for each batch, unlike Phase 6.
+
+## 2026-11-02: Owner's notes after Phase 7
+
+- **Events can be deleted.** The owner asked for this, reversing "delete event" being out of scope. It sits at the bottom of Review, behind a confirmation. It can't be undone, and it isn't tracked anywhere else.
+- **Storage is deleted first,** so an event that couldn't be removed stays on screen rather than coming back on the next launch.
+- **Deleting doesn't reach anything already sent.** Shared links and other people's copies stay, and a restored backup brings the event back.
+- **The icon is now a calculator with a flower on its screen,** replacing the placeholder flower. The source is `docs/icon.svg`. Everything sits inside the maskable safe area, so one drawing serves every size.
+- **The home screen name is "Flower Calc".** The owner asked for a new name without choosing one. "Flower Calculator" would be cut short on an iPhone. The full name stays as the app's title. iPhones also need the `apple-mobile-web-app-title` tag.
+
+## 2026-11-02: Owner's flow review
+
+- **Every subpage has one "Back to…" link at the top left.** It goes to the screen's parent, not browser history, because a shared link or an installed app may have no history. The four tabs have none.
+- **A price opened from a flower goes back to that flower,** and one opened from Shop mode goes back to Shop mode.
+- **Save buttons stay grey until something changes.** This covers suppliers, flowers, designs, recipes and thresholds. Copy design and Save as a new design stay grey until they have a name.
+- **Save price stays on.** Saving the same price is a real report, because it confirms the price and resets its age.
+- **A new size can be saved straight away,** because its copied recipe is new even though nothing has been edited.
+- **Leaving unsaved changes asks first.** Back links make this easy to do by accident. Changing sizes on a design doesn't ask, and still drops unsaved recipe edits.
+- **Only the button doing the work changes its label.** Others grey out, and copying a design says "Copying…".
+- **Design and recipe saves now confirm with a message,** because the page stays put and the button only goes grey.
+- **Disabled buttons had no grey style before this,** so the rule is global.
+- **All tappable list rows use the same card style,** with a shadow and a chevron, so they no longer look like inputs.
+- **Save as PDF now shows feedback, but the cause on phones is not confirmed.** The button says "Opening…". If the browser doesn't report the print screen opening within 1.5 seconds, it explains a route through Safari. Printing from an installed iPhone app couldn't be tested here, so a real fix waits on knowing which phone failed.
+
+## 2026-11-02: Mixed sizes, budget commas and countdown
+
+- **An event can hold several sizes of one design.** This replaces "one card per design" from Phase 2, which the owner found wouldn't cover 3 Large and 4 Small pedestals. "Add another size" adds a second card beside the first, with its own quantity and recipe, and a design can't have two cards of the same size.
+- **Every design keeps at least one card.** Removing a card with placements asks on the card, not in a pop-up, because a browser can silently block pop-ups.
+- **Purchase flags match on design and size.** A card switched to another size still shows as changed, and a size added afterwards shows as added.
+- **The favicon has its own simpler drawing,** `docs/favicon.svg`, because the app icon blurs at tab size. The icon had still been the default Vue logo until now.
+- **The app asks its own questions.** Browser pop-ups can be silently blocked, which would make a button or Back link seem dead, so every `window.confirm` became an in-app panel with named answers. Print-only `.no-print` rules keep it off printouts.
+- **Screens that list designs name the size only when an event has two cards of a design,** such as "Pedestals (Small)".
+- **The budget box adds commas as you type,** and keeps the cursor beside the same digit. Price boxes don't, as prices are small.
+- **Event cards show the date with a greyed countdown,** such as "30 Nov 2026 in 28 days", counted in calendar days.

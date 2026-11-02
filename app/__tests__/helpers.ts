@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory } from 'vue-router'
 
@@ -14,6 +15,11 @@ export async function mountApp(path = '/') {
   const wrapper = mount(App, { global: { plugins: [pinia, router] } })
   await flushPromises()
   return { wrapper, router }
+}
+
+export async function answerConfirm(wrapper: VueWrapper, yes: boolean) {
+  await wrapper.find(yes ? '.confirm-yes' : '.confirm-no').trigger('click')
+  await flushPromises()
 }
 
 export async function mountEvent(step: 'designs' | 'palette' | 'review' | 'work-plan' = 'designs') {

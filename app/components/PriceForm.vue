@@ -6,6 +6,7 @@ import type { Flower } from '@engine'
 
 import { isBigChange } from '../pricing'
 import { useCatalogueStore } from '../stores/catalogue'
+import { useConfirmStore } from '../stores/confirm'
 import { usePricesStore } from '../stores/prices'
 import { useThresholdsStore } from '../stores/thresholds'
 
@@ -13,6 +14,7 @@ const props = defineProps<{ flower: Flower; supplierId?: string }>()
 const emit = defineEmits<{ saved: [supplierId: string] }>()
 
 const catalogue = useCatalogueStore()
+const confirm = useConfirmStore()
 const prices = usePricesStore()
 const thresholds = useThresholdsStore()
 
@@ -55,7 +57,7 @@ function prefill() {
 prefill()
 watch(supplier, prefill)
 
-function submit() {
+async function submit() {
   const pricePence = parsePounds(price.value)
   const stemsPerBunch = soldByBunch.value ? Number(stems.value) : 1
 
@@ -70,7 +72,10 @@ function submit() {
   if (
     before !== undefined &&
     isBigChange(before, pricePence, thresholds.settings.bigChangePercent) &&
-    !window.confirm(`Was ${formatPence(before)}, now ${formatPence(pricePence)}. Is that right?`)
+    !(await confirm.ask(
+      `Was ${formatPence(before)}, now ${formatPence(pricePence)}. Is that right?`,
+      { yes: 'Yes, save', no: 'Change it' },
+    ))
   ) {
     return
   }

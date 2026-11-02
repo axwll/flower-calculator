@@ -6,7 +6,7 @@ import type { EventPlan } from '@engine'
 
 import { backupFileName, buildBackup, parseBackup } from '../storage/backup'
 import { useEventStore } from '../stores/event'
-import { mountApp, setDesign } from './helpers'
+import { answerConfirm, mountApp, setDesign } from './helpers'
 
 const NOW = '2026-06-30T12:00:00.000Z'
 
@@ -118,24 +118,24 @@ describe('settings: import', () => {
   })
 
   it('asks before replacing an event', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { wrapper } = await mountApp('/settings')
     const [event] = sampleEvents()
     const store = useEventStore()
     const text = buildBackup([{ ...(event as EventPlan), name: 'From backup' }], NOW)
     await pickFile(wrapper, text)
 
-    expect(confirm).toHaveBeenCalledOnce()
-    expect(confirm.mock.calls[0]?.[0]).toContain('replace 1 event')
+    expect(wrapper.find('[role="alertdialog"]').text()).toContain('replace 1 event')
+    await answerConfirm(wrapper, true)
+
     expect(store.events.map((item) => item.name)).toEqual(['From backup'])
   })
 
   it('changes nothing when replacing is cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     const { wrapper } = await mountApp('/settings')
     const [event] = sampleEvents()
     const store = useEventStore()
     await pickFile(wrapper, buildBackup([{ ...(event as EventPlan), name: 'From backup' }], NOW))
+    await answerConfirm(wrapper, false)
 
     expect(store.events.map((item) => item.name)).toEqual(['June wedding'])
     expect(wrapper.text()).not.toContain('restored')

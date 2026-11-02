@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { placementText } from '../wording'
+import { daysUntilText, groupPounds, placementText } from '../wording'
 
 function flower(perPlacement: number[], ranges: { from: number; to: number; stems: number }[]) {
   return { perPlacement, ranges }
@@ -70,5 +70,38 @@ describe('placementText', () => {
         ),
       ),
     ).toBe('1 for 3')
+  })
+})
+
+describe('groupPounds', () => {
+  it.each([
+    ['', ''],
+    ['999', '999'],
+    ['1000', '1,000'],
+    ['1,00', '100'],
+    ['1000000', '1,000,000'],
+    ['1000.', '1,000.'],
+    ['1000.50', '1,000.50'],
+    ['.5', '.5'],
+    ['£2500', '£2,500'],
+    ['twelve', 'twelve'],
+    ['1.2.3', '1.2.3'],
+  ])('turns "%s" into "%s"', (text, expected) => {
+    expect(groupPounds(text)).toBe(expected)
+  })
+})
+
+describe('daysUntilText', () => {
+  const now = new Date(2026, 10, 2, 23, 30)
+
+  it.each([
+    ['2026-11-02', 'today'],
+    ['2026-11-03', 'tomorrow'],
+    ['2026-11-01', 'yesterday'],
+    ['2026-11-30', 'in 28 days'],
+    ['2026-10-30', '3 days ago'],
+    ['2027-11-02', 'in 365 days'],
+  ])('%s is %s', (date, expected) => {
+    expect(daysUntilText(date, now)).toBe(expected)
   })
 })

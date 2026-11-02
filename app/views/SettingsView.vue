@@ -6,13 +6,16 @@ import type { PlanSettings } from '@engine'
 import InstallGuide from '../components/InstallGuide.vue'
 import { DEFAULT_SETTINGS } from '../pricing'
 import { backupFileName, buildBackup, parseBackup } from '../storage/backup'
+import { useConfirmStore } from '../stores/confirm'
 import { useEventStore } from '../stores/event'
 import { useInstallStore } from '../stores/install'
 import { useLibraryStore } from '../stores/library'
 import { usePricesStore } from '../stores/prices'
 import { thresholdProblem, useThresholdsStore } from '../stores/thresholds'
+import { useUnsavedChanges } from '../unsaved'
 import { plural } from '../wording'
 
+const confirm = useConfirmStore()
 const store = useEventStore()
 const install = useInstallStore()
 const prices = usePricesStore()
@@ -41,6 +44,10 @@ const limits = reactive(asText(thresholds.settings))
 const limitsProblem = ref('')
 const limitsSaved = ref(false)
 
+const { changed: limitsChanged, markSaved: markLimitsSaved } = useUnsavedChanges(() => ({
+  ...limits,
+}))
+
 function whole(text: string): number {
   return /^\d+$/.test(text.trim()) ? Number(text) : Number.NaN
 }
@@ -65,7 +72,10 @@ function saveLimits() {
   }
   limitsProblem.value = thresholdProblem(settings) ?? ''
   limitsSaved.value = !limitsProblem.value
-  if (limitsSaved.value) thresholds.save(settings)
+  if (limitsSaved.value) {
+    thresholds.save(settings)
+    markLimitsSaved()
+  }
 }
 
 function resetLimits() {
@@ -73,6 +83,7 @@ function resetLimits() {
   Object.assign(limits, asText(DEFAULT_SETTINGS))
   limitsProblem.value = ''
   limitsSaved.value = true
+  markLimitsSaved()
 }
 
 function saveBackup() {
@@ -98,12 +109,8 @@ async function restoreBackup(event: Event) {
   try {
     const events = parseBackup(await file.text())
     const replacing = store.countExisting(events)
-    if (
-      replacing > 0 &&
-      !window.confirm(`This will replace ${plural(replacing, 'event')} on this phone. Carry on?`)
-    ) {
-      return
-    }
+    const question = `This will replace ${plural(replacing, 'event')} on this phone. Carry on?`
+    if (replacing > 0 && !(await confirm.ask(question, { yes: 'Replace' }))) return
     store.importEvents(events)
     message.value = `${plural(events.length, 'event')} restored.`
   } catch (error) {
@@ -170,7 +177,9 @@ async function restoreBackup(event: Event) {
       <p v-if="limitsProblem" class="error" role="alert">{{ limitsProblem }}</p>
       <p v-if="limitsSaved" class="small" role="status">Thresholds saved.</p>
       <div class="row">
-        <button class="button button-primary" type="submit">Save thresholds</button>
+        <button class="button button-primary" type="submit" :disabled="!limitsChanged">
+          Save thresholds
+        </button>
         <button class="button button-quiet reset-thresholds" type="button" @click="resetLimits">
           Use the defaults
         </button>

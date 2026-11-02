@@ -8,6 +8,7 @@ import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
 
 interface Card {
+  key: string
   design: Design
   entry: PlanDesign
   designIndex: number
@@ -18,12 +19,15 @@ const store = useEventStore()
 
 const groups = computed(() => {
   const byGroup = new Map<string, Card[]>()
+  const seen = new Map<string, number>()
   store.current?.designs.forEach((entry, designIndex) => {
     const design = catalogue.designs.find((item) => item.id === entry.designId)
     if (!design) return
+    const nth = seen.get(design.id) ?? 0
+    seen.set(design.id, nth + 1)
     byGroup.set(design.group, [
       ...(byGroup.get(design.group) ?? []),
-      { design, entry, designIndex },
+      { key: `${design.id}-${nth}`, design, entry, designIndex },
     ])
   })
   return [...byGroup]
@@ -36,7 +40,7 @@ const groups = computed(() => {
       <h2 class="group">{{ group }}</h2>
       <DesignCard
         v-for="card in cards"
-        :key="card.designIndex"
+        :key="card.key"
         :design="card.design"
         :entry="card.entry"
         :design-index="card.designIndex"

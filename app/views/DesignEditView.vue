@@ -4,15 +4,19 @@ import { useRoute, useRouter } from 'vue-router'
 
 import type { Design, Recipe, RecipeDraft, Size } from '@engine'
 
+import BackLink from '../components/BackLink.vue'
 import LibraryRecipeEditor from '../components/LibraryRecipeEditor.vue'
 import { useCatalogueStore } from '../stores/catalogue'
+import { useConfirmStore } from '../stores/confirm'
 import { newDesignFrom, newId, useLibraryStore } from '../stores/library'
+import { useUnsavedChanges } from '../unsaved'
 
 const VARIED_SIZES: Size[] = ['Small', 'Medium', 'Large']
 
 const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
+const confirm = useConfirmStore()
 const library = useLibraryStore()
 
 const existing = computed(() =>
@@ -24,6 +28,19 @@ const group = ref('')
 const optional = ref(false)
 const active = ref(true)
 const problem = ref('')
+const designSaved = ref(false)
+const recipeSaved = ref(false)
+
+const { changed, markSaved } = useUnsavedChanges(() => [
+  name.value,
+  group.value,
+  optional.value,
+  active.value,
+])
+
+watch(changed, (isChanged) => {
+  if (isChanged) designSaved.value = false
+})
 
 const selectedSize = ref<Size | undefined>(undefined)
 const addingFrom = ref<Size | undefined>(undefined)
@@ -69,6 +86,9 @@ watch(
     variantProblem.value = ''
     sizeProblem.value = ''
     problem.value = ''
+    designSaved.value = false
+    recipeSaved.value = false
+    markSaved()
   },
   { immediate: true },
 )
@@ -76,6 +96,7 @@ watch(
 function pickSize(event: Event) {
   selectedSize.value = (event.target as HTMLSelectElement).value as Size
   addingFrom.value = undefined
+  recipeSaved.value = false
 }
 
 function addSize(event: Event) {
@@ -83,10 +104,12 @@ function addSize(event: Event) {
   addingFrom.value = selectedSize.value
   selectedSize.value = select.value as Size
   select.value = ''
+  recipeSaved.value = false
 }
 
 function onSaved() {
   addingFrom.value = undefined
+  recipeSaved.value = true
 }
 
 async function submit() {
@@ -103,8 +126,13 @@ async function submit() {
     ...(active.value ? {} : { active: false }),
   }
   const failed = await library.save({ action: 'saveDesign', design })
-  if (failed) problem.value = failed
-  else if (!existing.value) await router.push(`/library/designs/${design.id}`)
+  if (failed) {
+    problem.value = failed
+    return
+  }
+  markSaved()
+  if (existing.value) designSaved.value = true
+  else await router.push(`/library/designs/${design.id}`)
 }
 
 function cancelNewSize() {
@@ -118,8 +146,8 @@ function toDraft({ designId, size, lines, excludedFlowerIds }: Recipe): RecipeDr
 
 async function makeVariant() {
   const source = existing.value
-  variantProblem.value = variantName.value.trim() ? '' : 'Enter a name for the variant.'
-  if (!source || variantProblem.value || library.saving) return
+  variantProblem.value = ''
+  if (!source || library.saving) return
 
   const drafts = sizes.value.flatMap((size) => {
     const found = catalogue.recipeFor(source.id, size)
@@ -135,13 +163,18 @@ async function makeVariant() {
 
 async function retireSize() {
   const current = recipe.value
-  if (!current || !window.confirm(`Retire ${current.size}? Existing events keep theirs.`)) return
+  if (!current) return
+  const question = `Retire ${current.size}? Existing events keep theirs.`
+  if (!(await confirm.ask(question, { yes: 'Retire', no: 'Keep it' }))) return
 
   sizeProblem.value = ''
-  const failed = await library.save({
-    action: 'saveRecipe',
-    recipe: { ...toDraft(current), active: false },
-  })
+  const failed = await library.save(
+    {
+      action: 'saveRecipe',
+      recipe: { ...toDraft(current), active: false },
+    },
+    'retireSize',
+  )
   if (failed) sizeProblem.value = failed
   else selectedSize.value = sizes.value[0]
 }
@@ -149,6 +182,7 @@ async function retireSize() {
 
 <template>
   <section class="page">
+    <BackLink :to="{ path: '/library', query: { show: 'recipes' } }" label="Library" />
     <h1>{{ existing ? existing.name : 'Add a design' }}</h1>
 
     <form class="card design-form" novalidate @submit.prevent="submit">
@@ -174,8 +208,9 @@ async function retireSize() {
       <p class="muted small">A design that isn't in use stays in existing events only.</p>
 
       <p v-if="problem" class="error" role="alert">{{ problem }}</p>
-      <button class="button button-primary" type="submit" :disabled="library.saving">
-        {{ library.saving ? 'Saving…' : 'Save design' }}
+      <p v-if="designSaved" class="small" role="status">Saved.</p>
+      <button class="button button-primary" type="submit" :disabled="library.saving || !changed">
+        {{ library.task === 'saveDesign' ? 'Saving…' : 'Save design' }}
       </button>
     </form>
 
@@ -204,8 +239,10 @@ async function retireSize() {
         :size="selectedSize"
         :start="editing"
         @saved="onSaved"
+        @edited="recipeSaved = false"
       />
       <p v-else class="muted">Add a size to write this design's recipe.</p>
+      <p v-if="recipeSaved" class="small" role="status">Recipe saved.</p>
 
       <button
         v-if="recipe && !addingFrom && sizes.length > 1"
@@ -214,7 +251,7 @@ async function retireSize() {
         :disabled="library.saving"
         @click="retireSize"
       >
-        Retire this size
+        {{ library.task === 'retireSize' ? 'Retiring…' : 'Retire this size' }}
       </button>
 
       <button
@@ -249,10 +286,10 @@ async function retireSize() {
         <button
           class="button button-primary"
           type="button"
-          :disabled="library.saving"
+          :disabled="library.saving || !variantName.trim()"
           @click="makeVariant"
         >
-          {{ library.saving ? 'Saving…' : 'Copy design' }}
+          {{ library.task === 'saveNewDesign' ? 'Copying…' : 'Copy design' }}
         </button>
       </div>
     </template>

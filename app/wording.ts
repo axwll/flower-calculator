@@ -23,6 +23,29 @@ export function roleLabel(role: Role): string {
   return ROLE_LABELS[role]
 }
 
+/** Commas every three digits. Anything that isn't an amount is left for the form to refuse. */
+export function groupPounds(text: string): string {
+  const match = /^(£?)([\d,]*)(\.\d*)?$/.exec(text.trim())
+  if (!match) return text
+  const [, sign = '', whole = '', fraction = ''] = match
+  return sign + whole.replaceAll(',', '').replace(/\B(?=(\d{3})+$)/g, ',') + fraction
+}
+
+const DAY_IN_MS = 86_400_000
+
+/** Counts calendar days, so the answer doesn't change with the time of day or the clocks. */
+export function daysUntilText(date: string, now = new Date()): string {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number)
+  const days = Math.round(
+    (Date.UTC(year, month - 1, day) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) /
+      DAY_IN_MS,
+  )
+  if (days === 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days === -1) return 'yesterday'
+  return days > 0 ? `in ${days} days` : `${-days} days ago`
+}
+
 export function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`
 }

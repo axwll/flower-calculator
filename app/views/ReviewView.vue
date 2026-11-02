@@ -3,6 +3,7 @@ import { computed, watch } from 'vue'
 
 import { formatPence } from '@engine'
 
+import DeleteEvent from '../components/DeleteEvent.vue'
 import GatherList from '../components/GatherList.vue'
 import LeftoversList from '../components/LeftoversList.vue'
 import NeedsDataBadge from '../components/NeedsDataBadge.vue'
@@ -79,6 +80,7 @@ watch(
       Mark as purchased
     </RouterLink>
     <SharePlan />
+    <DeleteEvent />
   </section>
 </template>
 

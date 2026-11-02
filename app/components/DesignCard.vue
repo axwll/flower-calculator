@@ -14,15 +14,35 @@ const catalogue = useCatalogueStore()
 const store = useEventStore()
 
 const recipeOpen = ref(false)
+const confirmingRemove = ref(false)
 const change = computed(() => store.designChangeFor(props.designIndex))
 /** An event keeps a size retired after it was chosen. */
 const sizes = computed(() => {
-  const inUse = catalogue.sizesFor(props.design.id)
+  const free = store.freeSizes(props.designIndex)
+  const inUse = catalogue
+    .sizesFor(props.design.id)
+    .filter((size) => size === props.entry.size || free.includes(size))
   return inUse.includes(props.entry.size) ? inUse : [props.entry.size, ...inUse]
 })
+const canAddSize = computed(() => store.freeSizes(props.designIndex).length > 0)
+const canRemoveSize = computed(
+  () =>
+    (store.current?.designs.filter(({ designId }) => designId === props.design.id).length ?? 0) > 1,
+)
 
 function onSize(event: Event) {
   store.setSize(props.designIndex, (event.target as HTMLSelectElement).value as Size)
+}
+
+/** Asked on the card, because a browser can silently block its own pop-ups. */
+function askToRemove() {
+  if (props.entry.quantity > 0) confirmingRemove.value = true
+  else removeSize()
+}
+
+function removeSize() {
+  confirmingRemove.value = false
+  store.removeSize(props.designIndex)
 }
 
 function onEnabled(event: Event) {
@@ -70,6 +90,39 @@ function onEnabled(event: Event) {
           {{ recipeOpen ? 'Hide recipe' : 'Show recipe' }}
         </button>
         <RecipeEditor v-if="recipeOpen" :design="entry" :design-index="designIndex" />
+        <div v-if="confirmingRemove" class="remove-confirm" data-remove-confirm>
+          <p class="small">Remove {{ entry.size }} {{ design.name }} and its placements?</p>
+          <div class="row size-actions">
+            <button class="button button-danger confirm-remove" type="button" @click="removeSize">
+              Remove
+            </button>
+            <button
+              class="button button-quiet keep-size"
+              type="button"
+              @click="confirmingRemove = false"
+            >
+              Keep it
+            </button>
+          </div>
+        </div>
+        <div v-else-if="canAddSize || canRemoveSize" class="row size-actions">
+          <button
+            v-if="canAddSize"
+            class="button button-quiet add-size"
+            type="button"
+            @click="store.addSize(designIndex)"
+          >
+            Add another size
+          </button>
+          <button
+            v-if="canRemoveSize"
+            class="button button-quiet remove-size"
+            type="button"
+            @click="askToRemove"
+          >
+            Remove this size
+          </button>
+        </div>
       </template>
     </template>
   </article>
@@ -82,6 +135,21 @@ function onEnabled(event: Event) {
 
 .size {
   flex: 1 1 120px;
+}
+
+.size-actions {
+  flex-wrap: nowrap;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.size-actions .button-quiet {
+  margin: 0;
+  padding-inline: 0;
+}
+
+.remove-confirm p {
+  margin: 8px 0;
 }
 
 .switch {

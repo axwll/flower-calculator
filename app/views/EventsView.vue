@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import InstallGuide from '../components/InstallGuide.vue'
 import { useEventStore } from '../stores/event'
+import { dayText, daysUntilText } from '../wording'
 
 const store = useEventStore()
 </script>
@@ -13,11 +14,13 @@ const store = useEventStore()
     <RouterLink
       v-for="event in store.events"
       :key="event.id"
-      class="card event-link"
+      class="card card-link event-link"
       :to="`/events/${event.id}/designs`"
     >
       <strong>{{ event.name }}</strong>
-      <span v-if="event.date" class="muted small">{{ event.date }}</span>
+      <span v-if="event.date" class="small" data-event-date>
+        {{ dayText(event.date) }} <span class="muted">{{ daysUntilText(event.date) }}</span>
+      </span>
       <span v-if="event.purchase" class="badge">Purchased</span>
     </RouterLink>
     <RouterLink class="button button-primary" to="/events/new">New event</RouterLink>
@@ -27,11 +30,7 @@ const store = useEventStore()
 
 <style scoped>
 .event-link {
-  display: flex;
-  min-height: var(--tap);
   flex-direction: column;
-  color: var(--ink);
-  text-decoration: none;
 }
 
 .event-link .badge {

@@ -6,7 +6,7 @@ import { offlineClient, setApiClient } from '../api/client'
 import type { ApiAction } from '../api/client'
 import { useCatalogueStore } from '../stores/catalogue'
 import { usePricesStore } from '../stores/prices'
-import { mountApp } from './helpers'
+import { answerConfirm, mountApp } from './helpers'
 
 const DAY = 86_400_000
 let sent: ApiAction[]
@@ -274,27 +274,29 @@ describe('price form', () => {
   })
 
   it('needs no confirmation at exactly 50%', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { wrapper } = await openForm()
     await fillForm(wrapper, '60')
 
-    expect(confirm).not.toHaveBeenCalled()
+    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(false)
     expect(sent).toHaveLength(1)
   })
 
   it('asks just over 50%', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { wrapper } = await openForm()
     await fillForm(wrapper, '60.01')
 
-    expect(confirm).toHaveBeenCalledWith('Was £40.00, now £60.01. Is that right?')
+    expect(wrapper.find('[role="alertdialog"]').text()).toContain(
+      'Was £40.00, now £60.01. Is that right?',
+    )
+    expect(sent).toEqual([])
+    await answerConfirm(wrapper, true)
     expect(sent).toHaveLength(1)
   })
 
   it('sends nothing when the big change is cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     const { wrapper } = await openForm()
     await fillForm(wrapper, '400')
+    await answerConfirm(wrapper, false)
 
     expect(sent).toEqual([])
   })
@@ -343,22 +345,23 @@ describe('voiding from a flower page', () => {
   })
 
   it('asks first, then the previous price comes back', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { wrapper } = await withReport('Sam')
 
     expect(wrapper.find('[data-current-offer]').text()).toContain('£39.00')
 
     await wrapper.find('[data-report="r1"] button.void-report').trigger('click')
     await flushPromises()
+    await answerConfirm(wrapper, true)
 
     expect(sent.at(-1)).toMatchObject({ action: 'voidPrice', reportId: 'r1' })
     expect(wrapper.find('[data-current-offer]').text()).toContain('£40.00')
   })
 
   it('does nothing if the void is cancelled', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     const { wrapper } = await withReport('Sam')
     await wrapper.find('[data-report="r1"] button.void-report').trigger('click')
+    await flushPromises()
+    await answerConfirm(wrapper, false)
 
     expect(sent).toEqual([])
   })
