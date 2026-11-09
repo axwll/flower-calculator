@@ -122,7 +122,6 @@ async function restoreBackup(event: Event) {
 }
 
 const VERSION = __APP_VERSION__
-const COMMIT = __APP_COMMIT__
 </script>
 
 <template>
@@ -220,9 +219,7 @@ const COMMIT = __APP_COMMIT__
     <p v-if="install.help === 'installed'" class="muted">The app is installed.</p>
     <InstallGuide />
 
-    <p class="muted small version" data-version>
-      Version {{ VERSION }}<template v-if="COMMIT"> · {{ COMMIT }}</template>
-    </p>
+    <p class="muted small version" data-version>Version {{ VERSION }}</p>
   </section>
 </template>
 
