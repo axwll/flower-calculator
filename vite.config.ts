@@ -5,9 +5,14 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+import packageJson from './package.json' with { type: 'json' }
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/flower-calculator/',
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [
     vue(),
     vueDevTools(),
