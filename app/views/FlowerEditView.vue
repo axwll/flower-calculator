@@ -6,7 +6,7 @@ import type { Flower, Role, SoldAs } from '@engine'
 
 import BackLink from '../components/BackLink.vue'
 import { useCatalogueStore } from '../stores/catalogue'
-import { newId, useLibraryStore } from '../stores/library'
+import { rememberedId, useLibraryStore } from '../stores/library'
 import { useUnsavedChanges } from '../unsaved'
 import { ROLES, roleLabel } from '../wording'
 
@@ -14,6 +14,7 @@ const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
 const library = useLibraryStore()
+const newItem = rememberedId()
 
 const flowerId = computed(() => String(route.params.flowerId))
 const existing = computed(() => catalogue.flowers.find((item) => item.id === flowerId.value))
@@ -67,7 +68,7 @@ async function submit() {
   if (problem.value || library.saving) return
 
   const flower: Flower = {
-    id: existing.value?.id ?? newId(name.value),
+    id: existing.value?.id ?? newItem.for(name.value),
     name: name.value.trim(),
     roles: roles.value,
     soldAs: soldAs.value,
@@ -126,12 +127,16 @@ async function submit() {
         <input v-model="trackLeftovers" type="checkbox" name="track-leftovers" />
         <span>Warn about thin bunches</span>
       </label>
+      <p class="muted small">
+        Warns when you'd buy a whole bunch but use only a few stems from it.
+      </p>
       <label class="tick">
         <input v-model="active" type="checkbox" name="active" />
         <span>In use</span>
       </label>
       <p class="muted small">
-        A flower that isn't in use stays in existing events, but can't be picked for new work.
+        Untick to retire this flower. It drops out of the lists you pick from, but events that
+        already use it keep it.
       </p>
 
       <p v-if="problem" class="error" role="alert">{{ problem }}</p>

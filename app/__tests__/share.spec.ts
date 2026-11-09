@@ -364,6 +364,29 @@ describe('pasting a shared link', () => {
     expect(wrapper.find('.add-shared').exists()).toBe(true)
   })
 
+  it('pastes and opens a copied link in one tap', async () => {
+    const { store } = await purchasedPlan()
+    await storedPlan(plain(store.current))
+    const readText = vi.fn<() => Promise<string>>().mockResolvedValue(shareLink(SHARE_ID))
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { readText } })
+    const { wrapper, router } = await mountApp('/shared')
+    await wrapper.find('.paste-link').trigger('click')
+    await settled()
+
+    expect(router.currentRoute.value.path).toBe(`/shared/${SHARE_ID}`)
+  })
+
+  it('asks for a manual paste when the clipboard cannot be read', async () => {
+    const readText = vi.fn<() => Promise<string>>().mockRejectedValue(new Error('denied'))
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { readText } })
+    const { wrapper, router } = await mountApp('/shared')
+    await wrapper.find('.paste-link').trigger('click')
+    await settled()
+
+    expect(router.currentRoute.value.path).toBe('/shared')
+    expect(wrapper.find('[role="alert"]').text()).toContain('Paste')
+  })
+
   it('explains text that is not a link', async () => {
     const { wrapper } = await mountApp('/shared')
     await wrapper.find('input[name="shared-link"]').setValue('hello')

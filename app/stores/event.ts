@@ -165,6 +165,28 @@ export const useEventStore = defineStore('event', () => {
     }
   }
 
+  /**
+   * Designs added to the library later join an event that isn't purchased yet, at zero, so
+   * nothing changes until they're used. The built-in starting designs can't be trusted for
+   * this, as the saved ones may have retired some.
+   */
+  function addNewDesigns() {
+    const event = current.value
+    if (!event || event.purchase || catalogue.source === 'seed') return
+    const present = new Set(event.designs.map(({ designId }) => designId))
+    for (const design of catalogue.designs) {
+      if (design.active === false || present.has(design.id)) continue
+      const size = catalogue.defaultSize(design.id)
+      const entry = size && planDesign(design.id, size, design.optional)
+      if (entry) event.designs.push(entry)
+    }
+  }
+
+  watch(
+    [currentId, () => catalogue.designs, () => catalogue.recipes, () => catalogue.source],
+    addNewDesigns,
+  )
+
   function createEvent(details: NewEvent): string {
     const id = newEventId()
     const inUse = catalogue.designs.filter((design) => design.active !== false)

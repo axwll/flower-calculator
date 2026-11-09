@@ -6,13 +6,14 @@ import type { Supplier } from '@engine'
 
 import BackLink from '../components/BackLink.vue'
 import { useCatalogueStore } from '../stores/catalogue'
-import { newId, useLibraryStore } from '../stores/library'
+import { rememberedId, useLibraryStore } from '../stores/library'
 import { useUnsavedChanges } from '../unsaved'
 
 const route = useRoute()
 const router = useRouter()
 const catalogue = useCatalogueStore()
 const library = useLibraryStore()
+const newItem = rememberedId()
 
 const existing = computed(() =>
   catalogue.suppliers.find((item) => item.id === String(route.params.supplierId)),
@@ -44,7 +45,7 @@ async function submit() {
   const failed = await library.save({
     action: 'saveSupplier',
     supplier: {
-      id: existing.value?.id ?? newId(name.value),
+      id: existing.value?.id ?? newItem.for(name.value),
       name: name.value.trim(),
       type: type.value,
       active: active.value,

@@ -7,7 +7,7 @@ import { useLibraryStore } from '../stores/library'
 import { plural } from '../wording'
 
 const SECTIONS = [
-  { id: 'recipes', label: 'Recipes' },
+  { id: 'recipes', label: 'Design types' },
   { id: 'flowers', label: 'Flowers' },
   { id: 'suppliers', label: 'Suppliers' },
 ]
@@ -24,7 +24,7 @@ const flowers = computed(() => [...catalogue.flowers].sort((a, b) => a.name.loca
 const sizesText = computed(() => (designId: string, isPool?: boolean) => {
   if (isPool) return 'Takes the spare stems'
   const count = catalogue.sizesFor(designId).length
-  return count === 0 ? 'No recipe yet' : plural(count, 'size')
+  return count === 0 ? 'No stem count yet' : plural(count, 'size')
 })
 
 function show(id: string) {
@@ -37,8 +37,8 @@ function show(id: string) {
     <h1>Library</h1>
 
     <p v-if="!library.adminOn">
-      This is where recipes, flowers and suppliers are looked after. It needs the admin key, which
-      goes in <RouterLink to="/settings">Settings</RouterLink>.
+      This is where design types, flowers and suppliers are looked after. It needs the admin key,
+      which goes in <RouterLink to="/settings">Settings</RouterLink>.
     </p>
 
     <template v-else>
@@ -58,7 +58,7 @@ function show(id: string) {
 
       <template v-if="section === 'recipes'">
         <RouterLink class="button button-primary add" to="/library/designs/new">
-          Add a design
+          Add a design type
         </RouterLink>
         <RouterLink
           v-for="design in catalogue.designs"

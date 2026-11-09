@@ -3,13 +3,14 @@ import { computed, ref } from 'vue'
 
 import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
-import { newDesignFrom, useLibraryStore } from '../stores/library'
+import { newDesignFrom, rememberedId, useLibraryStore } from '../stores/library'
 
 const props = defineProps<{ designIndex: number }>()
 
 const catalogue = useCatalogueStore()
 const store = useEventStore()
 const library = useLibraryStore()
+const newDesign = rememberedId()
 
 const open = ref(false)
 const name = ref('')
@@ -24,7 +25,7 @@ function readyDraft() {
   done.value = ''
   const draft = store.libraryDraft(props.designIndex)
   if (draft && draft.lines.length > 0) return draft
-  problem.value = 'The recipe needs at least one line with stems.'
+  problem.value = 'The stem count needs at least one line with stems.'
   return null
 }
 
@@ -33,18 +34,22 @@ async function updateRecipe() {
   if (!recipe) return
   const failed = await library.save({ action: 'saveRecipe', recipe })
   if (failed) problem.value = failed
-  else done.value = 'Saved. New events will use this recipe.'
+  else done.value = 'Saved. New events will use this stem count.'
 }
 
 async function saveNew() {
   const draft = readyDraft()
   if (!draft || !design.value) return
   const { problem: failed } = await library.saveNewDesign(
-    newDesignFrom(design.value, name.value.trim()),
+    newDesignFrom(design.value, name.value.trim(), newDesign.for(name.value)),
     [draft],
   )
-  if (failed) problem.value = failed
-  else done.value = `Saved. New events will include ${name.value.trim()}.`
+  if (failed) {
+    problem.value = failed
+    return
+  }
+  newDesign.forget()
+  done.value = `Saved. New events will include ${name.value.trim()}.`
 }
 </script>
 

@@ -250,6 +250,20 @@ describe('flower editor', () => {
     expect(wrapper.find('a[href="/prices/scabious?from=library"]').exists()).toBe(true)
   })
 
+  it('keeps the id of a new flower when saving again after a lost reply', async () => {
+    reply = { status: 'retry' }
+    const { wrapper } = await mountAdmin('/library/flowers/new')
+    await wrapper.find('input[name="name"]').setValue('Peony')
+    await wrapper.find('input[value="focal"]').setValue(true)
+    await submit(wrapper)
+    const first = lastSent('saveFlower').flower.id
+
+    reply = { status: 'sent' }
+    await submit(wrapper)
+
+    expect(lastSent('saveFlower').flower.id).toBe(first)
+  })
+
   it('keeps what was typed when a save fails', async () => {
     reply = { status: 'retry' }
     const { wrapper, router } = await mountAdmin('/library/flowers/scabious')
@@ -341,6 +355,19 @@ describe('supplier list', () => {
     expect(router.currentRoute.value.fullPath).toBe('/library?show=suppliers')
   })
 
+  it('keeps the id of a new supplier when saving again after a lost reply', async () => {
+    reply = { status: 'retry' }
+    const { wrapper } = await mountAdmin('/library/suppliers/new')
+    await wrapper.find('input[name="name"]').setValue('Flower Market')
+    await submit(wrapper)
+    const first = lastSent('saveSupplier').supplier.id
+
+    reply = { status: 'sent' }
+    await submit(wrapper)
+
+    expect(lastSent('saveSupplier').supplier.id).toBe(first)
+  })
+
   it('needs a name', async () => {
     const { wrapper } = await mountAdmin('/library/suppliers/new')
     await submit(wrapper)
@@ -370,14 +397,28 @@ describe('designs', () => {
     expect(router.currentRoute.value.path).toBe(`/library/designs/${design.id}`)
   })
 
-  it('needs a name and a group', async () => {
+  it('keeps the id of a new design when saving again after a lost reply', async () => {
+    reply = { status: 'retry' }
+    const { wrapper } = await mountAdmin('/library/designs/new')
+    await wrapper.find('input[name="name"]').setValue('Flower crown')
+    await wrapper.find('input[name="group"]').setValue('Bridal')
+    await submit(wrapper)
+    const first = lastSent('saveDesign').design.id
+
+    reply = { status: 'sent' }
+    await submit(wrapper)
+
+    expect(lastSent('saveDesign').design.id).toBe(first)
+  })
+
+  it('needs a name and a location', async () => {
     const { wrapper } = await mountAdmin('/library/designs/new')
     await submit(wrapper)
     expect(wrapper.find('[role="alert"]').text()).toContain('name')
 
     await wrapper.find('input[name="name"]').setValue('Crown')
     await submit(wrapper)
-    expect(wrapper.find('[role="alert"]').text()).toContain('group')
+    expect(wrapper.find('[role="alert"]').text()).toContain('location')
   })
 
   it('retires a design', async () => {
@@ -689,6 +730,18 @@ describe('make a variant', () => {
     expect(sent).toHaveLength(1)
   })
 
+  it('keeps the id of the variant when copying again after a lost reply', async () => {
+    reply = { status: 'retry' }
+    const { wrapper } = await makeVariant('Pedestals (no dahlia)')
+    const first = lastSent('saveDesign').design.id
+
+    reply = { status: 'sent' }
+    await byText(wrapper, 'Copy design').trigger('click')
+    await flushPromises()
+
+    expect(lastSent('saveDesign').design.id).toBe(first)
+  })
+
   it('opens the new design ready to edit', async () => {
     const { router } = await makeVariant('Pedestals (no dahlia)')
 
@@ -767,6 +820,23 @@ describe('save to library', () => {
     expect(recipes).toHaveLength(1)
     expect(recipes[0]?.designId).toBe(design.id)
     expect(JSON.stringify(store.current)).toBe(before)
+  })
+
+  it('keeps the new design id when saving again, and makes a fresh one after', async () => {
+    reply = { status: 'retry' }
+    const { wrapper } = await openEventRecipe()
+    await card(wrapper).find('.save-to-library').trigger('click')
+    await card(wrapper).find('input[name="new-design-name"]').setValue('Top table (no dahlia)')
+    const save = async () => {
+      await card(wrapper).find('.save-new-design').trigger('click')
+      await flushPromises()
+      return lastSent('saveDesign').design.id
+    }
+    const first = await save()
+
+    reply = { status: 'sent' }
+    expect(await save()).toBe(first)
+    expect(await save()).not.toBe(first)
   })
 
   it('says so when it could not save, leaving the event alone', async () => {

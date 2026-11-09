@@ -58,6 +58,19 @@ function submitLink() {
   if (id) void router.push(`/shared/${id}`)
 }
 
+const canPaste = typeof navigator.clipboard?.readText === 'function'
+
+/** A link copied on a Mac reaches an iPad's clipboard by itself, so one tap opens it. */
+async function pasteLink() {
+  try {
+    pasted.value = await navigator.clipboard.readText()
+  } catch {
+    pasteProblem.value = 'Press and hold in the box, then tap Paste.'
+    return
+  }
+  submitLink()
+}
+
 function add() {
   if (!plan.value) return
   const id = store.addShared(plan.value, shareId.value)
@@ -77,7 +90,19 @@ function add() {
           <input v-model="pasted" name="shared-link" type="text" autocomplete="off" />
           <span v-if="pasteProblem" class="error" role="alert">{{ pasteProblem }}</span>
         </label>
-        <button class="button button-primary" type="submit">Open</button>
+        <div class="row">
+          <button
+            v-if="canPaste"
+            class="button button-primary paste-link"
+            type="button"
+            @click="pasteLink"
+          >
+            Paste and open
+          </button>
+          <button class="button" :class="{ 'button-primary': !canPaste }" type="submit">
+            Open
+          </button>
+        </div>
       </form>
     </template>
 

@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
 import { useCatalogueStore } from '../stores/catalogue'
 import { useEventStore } from '../stores/event'
@@ -88,5 +89,81 @@ describe('event store: creating events', () => {
     store.open(store.createEvent({ name: 'A' }))
 
     expect(store.allocation?.totals.stems).toBe(0)
+  })
+})
+
+describe('event store: designs added to the library later', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  function addCrown(active = true) {
+    const catalogue = useCatalogueStore()
+    const buttonhole = catalogue.recipeFor('buttonhole', 'Fixed')!
+    catalogue.source = 'live'
+    catalogue.designs = [
+      ...catalogue.designs,
+      { id: 'crown', name: 'Flower crown', group: 'Bridal', optional: false, active },
+    ]
+    catalogue.recipes = [...catalogue.recipes, { ...buttonhole, designId: 'crown' }]
+  }
+
+  function crown() {
+    return useEventStore().current?.designs.find(({ designId }) => designId === 'crown')
+  }
+
+  it('adds them to an event that is not purchased, at zero', async () => {
+    const store = useEventStore()
+    store.open(store.createEvent({ name: 'A' }))
+    addCrown()
+    await nextTick()
+
+    expect(crown()).toMatchObject({ size: 'Fixed', quantity: 0, enabled: true })
+  })
+
+  it('adds them only once', async () => {
+    const store = useEventStore()
+    store.open(store.createEvent({ name: 'A' }))
+    addCrown()
+    await nextTick()
+    store.open(store.createEvent({ name: 'B' }))
+    store.open(store.events[0]!.id)
+    await nextTick()
+
+    expect(store.current?.designs.filter(({ designId }) => designId === 'crown')).toHaveLength(1)
+  })
+
+  it('leaves a purchased event as it is', async () => {
+    const store = useEventStore()
+    const id = store.createEvent({ name: 'A' })
+    store.events[0]!.purchase = {} as never
+    store.open(id)
+    addCrown()
+    await nextTick()
+
+    expect(crown()).toBeUndefined()
+  })
+
+  it('leaves out designs that are not in use', async () => {
+    const store = useEventStore()
+    store.open(store.createEvent({ name: 'A' }))
+    addCrown(false)
+    await nextTick()
+
+    expect(crown()).toBeUndefined()
+  })
+
+  it('waits for saved designs rather than the built-in starting ones', async () => {
+    const store = useEventStore()
+    const id = store.createEvent({ name: 'A' })
+    const catalogue = useCatalogueStore()
+    store.events[0]!.designs = store.events[0]!.designs.filter(
+      ({ designId }) => designId !== 'buttonhole',
+    )
+    store.open(id)
+    await nextTick()
+
+    expect(catalogue.source).toBe('seed')
+    expect(store.current?.designs.some(({ designId }) => designId === 'buttonhole')).toBe(false)
   })
 })
