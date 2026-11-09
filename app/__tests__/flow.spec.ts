@@ -192,7 +192,7 @@ describe('save buttons', () => {
 
   it('greys a recipe until it changes', async () => {
     const { wrapper } = await mountAdmin('/library/designs/groom')
-    const save = () => byText(wrapper, 'Save recipe')
+    const save = () => byText(wrapper, 'Save stem count')
 
     expect(isGrey(save())).toBe(true)
 
@@ -211,7 +211,7 @@ describe('save buttons', () => {
     await wrapper.find('select[name="add-size"]').setValue('Large')
     await flushPromises()
 
-    expect(isGrey(byText(wrapper, 'Save recipe'))).toBe(false)
+    expect(isGrey(byText(wrapper, 'Save stem count'))).toBe(false)
   })
 
   it('greys Copy design until the variant has a name', async () => {
@@ -319,7 +319,7 @@ describe('one thing saving at a time', () => {
     const copying = byText(wrapper, 'Copying…')
     expect(isGrey(copying)).toBe(true)
     expect(isGrey(byText(wrapper, 'Save design'))).toBe(true)
-    expect(isGrey(byText(wrapper, 'Save recipe'))).toBe(true)
+    expect(isGrey(byText(wrapper, 'Save stem count'))).toBe(true)
     expect(wrapper.text()).not.toContain('Saving…')
 
     finish()
@@ -334,7 +334,7 @@ describe('one thing saving at a time', () => {
     await wrapper.find('form.design-form').trigger('submit')
 
     expect(wrapper.findAll('button').filter((b) => b.text() === 'Saving…')).toHaveLength(1)
-    expect(byText(wrapper, 'Save recipe').exists()).toBe(true)
+    expect(byText(wrapper, 'Save stem count').exists()).toBe(true)
 
     finish()
     await flushPromises()

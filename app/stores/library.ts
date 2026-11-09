@@ -23,9 +23,23 @@ export function newId(name: string): string {
   return `${slug || 'item'}-${random.toString(36)}`
 }
 
+/**
+ * One id per new item, so saving again after a lost reply updates it instead of adding a copy.
+ * Forget it once saved, so the next new item gets its own.
+ */
+export function rememberedId() {
+  let id: string | undefined
+  return {
+    for: (name: string) => (id ??= newId(name)),
+    forget: () => {
+      id = undefined
+    },
+  }
+}
+
 /** A variant is a separate design, because there's one recipe per design and size. */
-export function newDesignFrom(source: Design, name: string): Design {
-  return { id: newId(name), name, group: source.group, optional: source.optional }
+export function newDesignFrom(source: Design, name: string, id = newId(name)): Design {
+  return { id, name, group: source.group, optional: source.optional }
 }
 
 export const useLibraryStore = defineStore('library', () => {

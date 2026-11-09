@@ -203,3 +203,11 @@ The owner asked for this phase to start without approving the brief first. They'
 - **A card keeps its size box once every size is on the event,** even with nothing to switch to, so each card still says which size it is.
 - **The Events tab stays highlighted on shared link screens,** as they're reached from Events.
 
+
+## 2026-11-09: Feedback from first use
+
+- **A new flower, supplier or design keeps its id until it's saved.** Each press of Save used to make a new id, so if a save reached the Sheet but its reply was lost, pressing Save again added a second copy. The same applied to "Make a variant" and "Save as a new design". The id is forgotten once saved, so the next new item gets its own.
+- **Designs added to the library later join events that aren't purchased,** at zero placements, so nothing changes until they're used. This replaces "existing events keep their own designs" for new designs only: recipes already in an event are still that event's own copy. Retired designs aren't added, and nothing is added while the app only has its built-in starting data, as the saved data may have retired some of it. Purchased events stay as they were.
+- **Renamed for the florist:** a design's "group" is now "Location", a "recipe" is now a "stem count", and the Library's "Recipes" section is now "Design types". Only the words on screen changed. The data and code keep their old names, so nothing in the Sheet moves.
+- **In use, Optional and Warn about thin bunches each have a line saying what they do.** The labels stay the same.
+- **"Open a shared link" has a "Paste and open" button.** A link opened on an iPhone or iPad goes to Safari, not the installed app, so it has to be pasted in anyway. Copying on a Mac reaches an iPad's clipboard by itself (Universal Clipboard, on macOS Monterey too), so one tap opens it. If the clipboard can't be read, it says to paste into the box instead.

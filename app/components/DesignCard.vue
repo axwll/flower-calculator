@@ -91,7 +91,7 @@ function onEnabled(event: Event) {
           :aria-expanded="recipeOpen"
           @click="recipeOpen = !recipeOpen"
         >
-          {{ recipeOpen ? 'Hide recipe' : 'Show recipe' }}
+          {{ recipeOpen ? 'Hide stem count' : 'Show stem count' }}
         </button>
         <RecipeEditor v-if="recipeOpen" :design="entry" :design-index="designIndex" />
         <div v-if="confirmingRemove" class="remove-confirm" data-remove-confirm>

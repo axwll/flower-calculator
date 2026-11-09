@@ -8,7 +8,7 @@ import BackLink from '../components/BackLink.vue'
 import LibraryRecipeEditor from '../components/LibraryRecipeEditor.vue'
 import { useCatalogueStore } from '../stores/catalogue'
 import { useConfirmStore } from '../stores/confirm'
-import { newDesignFrom, newId, useLibraryStore } from '../stores/library'
+import { newDesignFrom, rememberedId, useLibraryStore } from '../stores/library'
 import { useUnsavedChanges } from '../unsaved'
 
 const VARIED_SIZES: Size[] = ['Small', 'Medium', 'Large']
@@ -18,6 +18,8 @@ const router = useRouter()
 const catalogue = useCatalogueStore()
 const confirm = useConfirmStore()
 const library = useLibraryStore()
+const newItem = rememberedId()
+const newVariant = rememberedId()
 
 const existing = computed(() =>
   catalogue.designs.find((item) => item.id === String(route.params.designId)),
@@ -115,11 +117,11 @@ function onSaved() {
 async function submit() {
   problem.value = ''
   if (!name.value.trim()) problem.value = 'Enter a name.'
-  else if (!group.value.trim()) problem.value = 'Enter a group.'
+  else if (!group.value.trim()) problem.value = 'Enter a location.'
   if (problem.value || library.saving) return
 
   const design: Design = {
-    id: existing.value?.id ?? newId(name.value),
+    id: existing.value?.id ?? newItem.for(name.value),
     name: name.value.trim(),
     group: group.value.trim(),
     optional: optional.value,
@@ -154,11 +156,15 @@ async function makeVariant() {
     return found ? [toDraft(found)] : []
   })
   const { id, problem: failed } = await library.saveNewDesign(
-    newDesignFrom(source, variantName.value.trim()),
+    newDesignFrom(source, variantName.value.trim(), newVariant.for(variantName.value)),
     drafts,
   )
-  if (failed) variantProblem.value = failed
-  else await router.push(`/library/designs/${id}`)
+  if (failed) {
+    variantProblem.value = failed
+    return
+  }
+  newVariant.forget()
+  await router.push(`/library/designs/${id}`)
 }
 
 async function retireSize() {
@@ -183,7 +189,7 @@ async function retireSize() {
 <template>
   <section class="page">
     <BackLink :to="{ path: '/library', query: { show: 'recipes' } }" label="Library" />
-    <h1>{{ existing ? existing.name : 'Add a design' }}</h1>
+    <h1>{{ existing ? existing.name : 'Add a design type' }}</h1>
 
     <form class="card design-form" novalidate @submit.prevent="submit">
       <label class="field">
@@ -191,7 +197,7 @@ async function retireSize() {
         <input v-model="name" name="name" type="text" autocomplete="off" />
       </label>
       <label class="field">
-        <span class="field-label">Group</span>
+        <span class="field-label">Location</span>
         <input v-model="group" name="group" type="text" autocomplete="off" list="design-groups" />
         <datalist id="design-groups">
           <option v-for="item in groups" :key="item" :value="item" />
@@ -201,11 +207,17 @@ async function retireSize() {
         <input v-model="optional" type="checkbox" name="optional" />
         <span>Optional</span>
       </label>
+      <p class="muted small">
+        Optional designs start switched off in each event. Tick Include on the event to use one.
+      </p>
       <label class="tick">
         <input v-model="active" type="checkbox" name="active" />
         <span>In use</span>
       </label>
-      <p class="muted small">A design that isn't in use stays in existing events only.</p>
+      <p class="muted small">
+        Untick to retire this design. Events won't get it any more, but those that already have it
+        keep it.
+      </p>
 
       <p v-if="problem" class="error" role="alert">{{ problem }}</p>
       <p v-if="designSaved" class="small" role="status">Saved.</p>
@@ -215,7 +227,7 @@ async function retireSize() {
     </form>
 
     <template v-if="hasRecipes">
-      <h2>Recipe</h2>
+      <h2>Stem count</h2>
       <div class="row sizes">
         <label v-if="sizes.length > 0 && !addingFrom" class="size">
           <span class="field-label">Size</span>
@@ -241,8 +253,8 @@ async function retireSize() {
         @saved="onSaved"
         @edited="recipeSaved = false"
       />
-      <p v-else class="muted">Add a size to write this design's recipe.</p>
-      <p v-if="recipeSaved" class="small" role="status">Recipe saved.</p>
+      <p v-else class="muted">Add a size to write this design's stem count.</p>
+      <p v-if="recipeSaved" class="small" role="status">Stem count saved.</p>
 
       <button
         v-if="recipe && !addingFrom && sizes.length > 1"

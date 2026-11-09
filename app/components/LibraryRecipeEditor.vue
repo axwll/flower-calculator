@@ -56,7 +56,7 @@ function addLine(event: Event) {
 
 async function submit() {
   problem.value = ''
-  if (lines.value.length === 0) problem.value = 'A recipe needs at least one line.'
+  if (lines.value.length === 0) problem.value = 'A stem count needs at least one line.'
   else if (lines.value.some((line) => line.stemsPerUnit < 1)) {
     problem.value = 'Every line needs at least one stem.'
   }
@@ -85,7 +85,7 @@ async function submit() {
 <template>
   <form class="card recipe-form" novalidate @submit.prevent="submit">
     <p class="muted small">
-      Stems for one placement. Existing events keep their own copy of this recipe.
+      Stems for one placement. Existing events keep their own copy of this stem count.
     </p>
 
     <div v-for="(line, index) in lines" :key="index" class="row recipe-line">
@@ -134,7 +134,7 @@ async function submit() {
       type="submit"
       :disabled="library.saving || !(changed || isNewSize)"
     >
-      {{ library.task === 'saveRecipe' ? 'Saving…' : 'Save recipe' }}
+      {{ library.task === 'saveRecipe' ? 'Saving…' : 'Save stem count' }}
     </button>
   </form>
 </template>

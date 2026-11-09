@@ -122,7 +122,7 @@ describe('add another size', () => {
     await cards(wrapper)[1]?.find('select[name="size"]').setValue('Large')
     await flushPromises()
 
-    expect(cards(wrapper)[1]?.find('.recipe-toggle').text()).toBe('Hide recipe')
+    expect(cards(wrapper)[1]?.find('.recipe-toggle').text()).toBe('Hide stem count')
   })
 })
 
